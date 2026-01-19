@@ -2,11 +2,9 @@ import os
 import json
 import re
 from datetime import datetime, timezone, date
-
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
-
 import psycopg
 
 app = FastAPI()
@@ -18,10 +16,10 @@ QUESTIONS = [
     # Identificación
     {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names"},
     {"key": "apellidos_raw", "text": "Escribe tus *APELLIDOS* (uno o dos).\nEj: Pérez Gómez", "type": "surnames"},
-    {"key": "tipo_id", "text": "Tipo de documento:\n1) CC\n2) CE\n3) PAS\n\nResponde con el número o con CC/CE/PAS.", "type": "doc_type"},
+    {"key": "tipo_id", "text": "Tipo de documento:\n1) Cédula de ciudadanía\n2) Cédula de extrangería\n3) Pasaporte\n4) Registro civil\n5) Tarjeta de identidad\n6) Adulto sin identificación\n7) Menor sin identificación\n8) Número único de identificación\n9) Carnet Diplomático\n10) Permiso especial de permanencia\n11) Certificado nacido vivo\n12) Permiso por protección temporal\n13) Salva conducto\n14) Documento extrangjero\n\nResponde con el número", "type": "doc_type"},
     {"key": "cedula", "text": "Escribe tu número de documento (solo números):", "type": "doc_number"},
     {"key": "genero", "text": "Género:\n1) Masculino\n2) Femenino", "type": "gender"},
-    {"key": "fecha_nacimiento", "text": "Fecha de nacimiento (DD/MM/AAAA).\nEj: 05/09/1996", "type": "dob"},
+    {"key": "fecha_nacimiento", "text": "Fecha de nacimiento (DD/MM/AAAA).\nEj: 11/05/1997", "type": "dob"},
 
     # Contacto
     {"key": "celular", "text": "Número de celular (solo números).\nEj: 3001234567", "type": "phone"},
@@ -35,8 +33,10 @@ QUESTIONS = [
     {"key": "zona", "text": "Zona:\n1) Urbana\n2) Rural", "type": "zone"},
 
     # Salud
-    {"key": "regimen", "text": "Régimen:\n1) Contributivo\n2) Subsidiado\n3) Especial\n4) No sabe", "type": "regimen"},
-    {"key": "eps", "text": "¿Cuál es tu EPS?", "type": "text_min3"},
+    {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo", "type": "regimen"},
+    {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "text_min3"},
+    {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "text_min3"},
+
 
     # Condicional
     {"key": "discapacidad", "text": "¿Tienes alguna discapacidad?\n1) Sí\n2) No", "type": "yesno"},
@@ -46,6 +46,14 @@ QUESTIONS = [
     # Emergencia
     {"key": "nombre_acompanante", "text": "Nombre de acompañante (si aplica). Si no, escribe NO.", "type": "optional_name"},
     {"key": "telefono_emergencia", "text": "Teléfono de emergencia (solo números):", "type": "phone"},
+
+     # Cita Component 
+    {"key": "tipo_cita", "text": "¿Tipo de cita?\n1) Valoración primera vez\n2) Control", "type": "tipocita"},
+    {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Valoración primera vez\n2) Hidroterapia\n3) Terapia Física\n4) Terapia domiciliaria", "type": "tiposervicio",
+     "condition": lambda data: data.get("tipo_cita") == "SI"},
+
+     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
+
 ]
 
 # =========================
@@ -206,7 +214,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         try:
             d = datetime.strptime(msg, "%d/%m/%Y").date()
         except ValueError:
-            return False, None, "Formato inválido. Usa DD/MM/AAAA.\nEj: 05/09/1996"
+            return False, None, "Formato inválido. Usa DD/MM/AAAA.\nEj: 11/05/1997"
         age = calc_age(d)
         if age < 0 or age > 120:
             return False, None, "Esa fecha se ve rara 😅 Revisa y envíala en DD/MM/AAAA."
@@ -234,18 +242,50 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     if t == "regimen":
         m = msg.lower()
-        mapping = {"1": "CONTRIBUTIVO", "2": "SUBSIDIADO", "3": "ESPECIAL", "4": "NO_SABE"}
+        mapping = {"1": "Contributivo cotizante", "2": "Subsidiado", "3": "Contributivo beneficiario", "4": "particular", "5": "No afiliado", "6": "Tomador/Amparado ARL", "7": "Tomador/Amparado SOAT", "8": "Tomador/Amparado Planes voluntarios de salud", "9": "Especial o Excepción cotizante", "10": "Especial o Excepción beneficiario", "11": "Personas privadas de la libertad a cargo del fondo"}
         if m in mapping:
             return True, mapping[m], None
-        if "contri" in m:
-            return True, "CONTRIBUTIVO", None
+        if "Contributivo cotizante" in m:
+            return True, "Contributivo cotizante", None
         if "subsi" in m:
-            return True, "SUBSIDIADO", None
-        if "espe" in m:
-            return True, "ESPECIAL", None
+            return True, "Subsidiado", None
+        if "Contributivo beneficiario" in m:
+            return True, "Contributivo beneficiario", None
+        if "particular" in m:
+            return True, "particular", None
+        if "no afiliado" in m:
+            return True, "No afiliado", None
+        if "arl" in m:
+            return True, "Tomador/Amparado ARL", None
+        if "soat" in m:
+            return True, "Tomador/Amparado SOAT", None
+        if "planes voluntarios de salud" in m:
+            return True, "Tomador/Amparado Planes voluntarios de salud", None
+        if "especial o excepción cotizante" in m:
+            return True, "Especial o Excepción cotizante", None
+        if "especial o excepción beneficiario" in m:
+            return True, "Especial o Excepción beneficiario", None
+        if "personas privadas de la libertad a cargo del fondo" in m:
+            return True, "Personas privadas de la libertad a cargo del fondo", None
         if "no" in m and "sab" in m:
             return True, "NO_SABE", None
-        return False, None, "Responde con 1, 2, 3 o 4."
+        return False, None, "Responde con 1, 2, 3 o 4..."
+
+    if t == "tipocita":
+        m = msg.lower()
+        if m in {"1", "Valoración primera vez", "Valoracion primera vez"}:
+            return True, "SI", None
+        if m in {"2", "Control"}:
+            return True, "Control", None
+        return False, None, "Responde con 1 (Sí) o 2 (No)."
+    
+    if t == "tiposervicio":
+        m = msg.lower()
+        if m in {"1", "Valoración primera vez", "Valoracion primera vez"}:
+            return True, "SI", None
+        if m in {"2", "Control"}:
+            return True, "Control", None
+        return False, None, "Responde con 1 (Sí) o 2 (No)."
 
     if t == "yesno":
         m = msg.lower()
@@ -321,7 +361,7 @@ async def whatsapp_webhook(request: Request):
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
-        resp.message("Perfecto ✅\nEn un momento se le agendará la cita.")
+        resp.message("Perfecto ✅\n Se dará respuesta a su solicitud de 2 a 3 días hábiles.")
         print(f"[CAPTURA] from={from_number} data={data}")
         delete_session(from_number)
 
