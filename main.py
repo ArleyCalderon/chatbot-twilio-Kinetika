@@ -3,6 +3,7 @@ import os
 import json
 import re
 import psycopg
+from datetime import datetime, timezone, date, timedelta
 from datetime import datetime, timezone, date
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
@@ -112,12 +113,24 @@ def on_startup():
 def load_session(from_number: str):
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT step, data FROM sessions WHERE from_number = %s;", (from_number,))
+            cur.execute("""
+                SELECT step, data, updated_at
+                FROM sessions
+                WHERE from_number = %s;
+            """, (from_number,))
             row = cur.fetchone()
             if not row:
                 return None
-            step, data = row
+
+            step, data, updated_at = row
+
+            # ⏰ Expiración (ej: 24 horas)
+            if datetime.now(timezone.utc) - updated_at > timedelta(hours=24):
+                delete_session(from_number)
+                return None
+
             return {"step": step, "data": data}
+
 
 def save_submission(from_number: str, flow: str, data: dict, message_sid: str | None = None):
     now = datetime.now(timezone.utc)
