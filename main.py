@@ -406,11 +406,6 @@ async def whatsapp_webhook(request: Request):
         data["cedula_cancelacion"] = digits
         save_session(from_number, step=-3, data=data)
 
-        # Aquí iría tu integración con Automation Anywhere:
-        # - buscar cliente
-        # - cancelar cita
-        # - devolver confirmación real
-        #
         # Por ahora: respuesta dummy
         resp.message(f"Listo ✅ Estoy procesando la cancelación para la cédula {digits}.")
         print(f"[CANCELACION] from={from_number} data={data}")
@@ -448,53 +443,3 @@ async def whatsapp_webhook(request: Request):
 
     return Response(content=str(resp), media_type="application/xml")
 # endregion
-#region Webhook Twilio WhatsApp Simple
-# =========================
-@app.post("/whatsapp/webhook")
-async def whatsapp_webhook(request: Request):
-    form = await request.form()
-    incoming_msg = (form.get("Body") or "").strip()
-    from_number = form.get("From")
-
-    resp = MessagingResponse()
-
-    session = load_session(from_number)
-
-    # Usuario nuevo
-    if session is None:
-        save_session(from_number, step=0, data={})
-        resp.message(QUESTIONS[0]["text"])
-        return Response(content=str(resp), media_type="application/xml")
-
-    step = session["step"]
-    data = session["data"] or {}
-
-    # Asegura step válido (salta condicionales)
-    step = next_valid_step(step, data)
-
-    # Guardar respuesta actual con validación
-    if step < len(QUESTIONS):
-        q = QUESTIONS[step]
-        ok, normalized, error = validate_and_normalize(q, incoming_msg, data)
-        if not ok:
-            resp.message(error)
-            return Response(content=str(resp), media_type="application/xml")
-
-        # guarda campo principal
-        data[q["key"]] = normalized
-
-        # avanza
-        step += 1
-        step = next_valid_step(step, data)
-        save_session(from_number, step=step, data=data)
-
-    # Preguntar siguiente o terminar
-    if step < len(QUESTIONS):
-        resp.message(QUESTIONS[step]["text"])
-    else:
-        resp.message("Perfecto ✅\n Se dará respuesta a su solicitud de 2 a 3 días hábiles.")
-        print(f"[CAPTURA] from={from_number} data={data}")
-        delete_session(from_number)
-
-    return Response(content=str(resp), media_type="application/xml")
-#endregion
