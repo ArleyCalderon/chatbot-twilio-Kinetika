@@ -3,3 +3,4 @@ uvicorn[standard]
 twilio
 python-multipart
 psycopg[binary]
+psycopg_pool

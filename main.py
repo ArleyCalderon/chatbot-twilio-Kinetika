@@ -2,12 +2,17 @@
 import os
 import json
 import re
+import psycopg
 from datetime import datetime, timezone, date
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
-import psycopg
+from psycopg_pool import ConnectionPool
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+pool: ConnectionPool | None = None
 app = FastAPI()
+
 #endregion
 #region Preguntas 
 
@@ -62,9 +67,10 @@ def health():
 
 
 def get_conn():
-    if not DATABASE_URL:
-        raise RuntimeError("Falta DATABASE_URL en environment variables")
-    return psycopg.connect(DATABASE_URL)
+    if pool is None:
+        raise RuntimeError("Pool no inicializado aún")
+    return pool.connection()
+
 
 
 def init_db():
@@ -95,7 +101,12 @@ def init_db():
 
 @app.on_event("startup")
 def on_startup():
+    global pool
+    if not DATABASE_URL:
+        raise RuntimeError("Falta DATABASE_URL")
+    pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=5)
     init_db()
+
 
 
 def load_session(from_number: str):
