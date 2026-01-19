@@ -16,7 +16,7 @@ QUESTIONS = [
     # Identificación
     {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names"},
     {"key": "apellidos_raw", "text": "Escribe tus *APELLIDOS* (uno o dos).\nEj: Pérez Gómez", "type": "surnames"},
-    {"key": "tipo_id", "text": "Tipo de documento:\n1) Cédula de ciudadanía\n2) Cédula de extrangería\n3) Pasaporte\n4) Registro civil\n5) Tarjeta de identidad\n6) Adulto sin identificación\n7) Menor sin identificación\n8) Número único de identificación\n9) Carnet Diplomático\n10) Permiso especial de permanencia\n11) Certificado nacido vivo\n12) Permiso por protección temporal\n13) Salva conducto\n14) Documento extrangjero\n\nResponde con el número", "type": "doc_type"},
+    {"key": "tipo_id", "text": "Tipo de documento:\n1) Cédula de ciudadanía\n2) Cédula de extranjería\n3) Pasaporte\n4) Registro civil\n5) Tarjeta de identidad\n6) Adulto sin identificación\n7) Menor sin identificación\n8) Número único de identificación\n9) Carnet Diplomático\n10) Permiso especial de permanencia\n11) Certificado nacido vivo\n12) Permiso por protección temporal\n13) Salva conducto\n14) Documento extranjero\n\nResponde con el número", "type": "doc_type"},
     {"key": "cedula", "text": "Escribe tu número de documento (solo números):", "type": "doc_number"},
     {"key": "genero", "text": "Género:\n1) Masculino\n2) Femenino", "type": "gender"},
     {"key": "fecha_nacimiento", "text": "Fecha de nacimiento (DD/MM/AAAA).\nEj: 11/05/1997", "type": "dob"},
@@ -33,7 +33,7 @@ QUESTIONS = [
     {"key": "zona", "text": "Zona:\n1) Urbana\n2) Rural", "type": "zone"},
 
     # Salud
-    {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo", "type": "regimen"},
+    {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo\n12) No sabe", "type": "regimen"},
     {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "text_min3"},
     {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "text_min3"},
 
@@ -49,13 +49,12 @@ QUESTIONS = [
 
      # Cita Component 
     {"key": "tipo_cita", "text": "¿Tipo de cita?\n1) Valoración primera vez\n2) Control", "type": "tipocita"},
-    {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Valoración primera vez\n2) Hidroterapia\n3) Terapia Física\n4) Terapia domiciliaria", "type": "tiposervicio",
-     "condition": lambda data: data.get("tipo_cita") == "SI"},
+    {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"}, 
 
      {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
 
 ]
-
+ 
 # =========================
 # DB
 # =========================
@@ -125,11 +124,22 @@ def delete_session(from_number: str):
 
 # =========================
 # Normalización / Validación
-# =========================
+# ========================= 
 DOC_MAP = {
-    "1": "CC", "cc": "CC", "c.c": "CC", "cedula": "CC", "cédula": "CC",
-    "2": "CE", "ce": "CE", "c.e": "CE",
-    "3": "PAS", "pas": "PAS", "pasaporte": "PAS",
+    "1": "Cédula de ciudadanía", "cc": "Cédula de ciudadanía", "c.c": "Cédula de ciudadanía", "cedula": "Cédula de ciudadanía", "cédula": "Cédula de ciudadanía",
+    "2": "Cédula de extranjería", "ce": "Cédula de extranjería", "c.e": "Cédula de extranjería",
+    "3": "Pasaporte", "pas": "Pasaporte", "pasaporte": "Pasaporte",
+    "4": "registro civil", "registro": "registro civil", "rc": "registro civil",
+    "5": "tarjeta de identidad", "ti": "tarjeta de identidad", "tarjeta de identidad": "tarjeta de identidad",
+    "6": "Adulto sin identificación", "asi": "Adulto sin identificación", "adulto sin identificación": "Adulto sin identificación",
+    "7": "Menor sin identificación", "Menor sin identificación": "Menor sin identificación",
+    "8": "Número único de identificación", "nui": "Número único de identificación", "número único de identificación": "Número único de identificación",
+    "9": "Carnet Diplomático", "cd": "Carnet Diplomático", "carnet diplomático": "Carnet Diplomático",
+    "10": "Permiso especial de permanencia", "pep": "Permiso especial de permanencia", "permiso especial de permanencia": "Permiso especial de permanencia",
+    "11": "Certificado nacido vivo", "cnv": "Certificado nacido vivo", "certificado nacido vivo": "Certificado nacido vivo",
+    "12": "Permiso por protección temporal", "ppt": "Permiso por protección temporal", "permiso por protección temporal": "Permiso por protección temporal",
+    "13": "Salva conducto", "sc": "Salva conducto", "salva conducto": "Salva conducto",
+    "14": "Documento extranjero", "de": "Documento extranjero", "documento extranjero": "Documento extranjero",
 }
 
 
@@ -193,7 +203,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         key = msg.lower().replace("️⃣", "").strip()
         doc = DOC_MAP.get(key)
         if not doc:
-            return False, None, "No te entendí 😅 Responde con 1, 2, 3 o CC / CE / PAS."
+            return False, None, "No te entendí 😅 Responde con 1, 2, 3 o 4 ...."
         return True, doc, None
 
     if t == "doc_number":
@@ -242,7 +252,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     if t == "regimen":
         m = msg.lower()
-        mapping = {"1": "Contributivo cotizante", "2": "Subsidiado", "3": "Contributivo beneficiario", "4": "particular", "5": "No afiliado", "6": "Tomador/Amparado ARL", "7": "Tomador/Amparado SOAT", "8": "Tomador/Amparado Planes voluntarios de salud", "9": "Especial o Excepción cotizante", "10": "Especial o Excepción beneficiario", "11": "Personas privadas de la libertad a cargo del fondo"}
+        mapping = {"1": "Contributivo cotizante", "2": "Subsidiado", "3": "Contributivo beneficiario", "4": "particular", "5": "No afiliado", "6": "Tomador/Amparado ARL", "7": "Tomador/Amparado SOAT", "8": "Tomador/Amparado Planes voluntarios de salud", "9": "Especial o Excepción cotizante", "10": "Especial o Excepción beneficiario", "11": "Personas privadas de la libertad a cargo del fondo","12": "NO_SABE"}
         if m in mapping:
             return True, mapping[m], None
         if "Contributivo cotizante" in m:
@@ -267,25 +277,27 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
             return True, "Especial o Excepción beneficiario", None
         if "personas privadas de la libertad a cargo del fondo" in m:
             return True, "Personas privadas de la libertad a cargo del fondo", None
-        if "no" in m and "sab" in m:
+        if "no" in m and "no sabe" in m:
             return True, "NO_SABE", None
         return False, None, "Responde con 1, 2, 3 o 4..."
 
     if t == "tipocita":
         m = msg.lower()
         if m in {"1", "Valoración primera vez", "Valoracion primera vez"}:
-            return True, "SI", None
+            return True, "Valoración primera vez", None
         if m in {"2", "Control"}:
             return True, "Control", None
-        return False, None, "Responde con 1 (Sí) o 2 (No)."
+        return False, None, "Responde con 1 o 2 ."
     
     if t == "tiposervicio":
         m = msg.lower()
-        if m in {"1", "Valoración primera vez", "Valoracion primera vez"}:
-            return True, "SI", None
-        if m in {"2", "Control"}:
-            return True, "Control", None
-        return False, None, "Responde con 1 (Sí) o 2 (No)."
+        if m in {"1", "Hidroterapia"}:
+            return True, "Hidroterapia", None
+        if m in {"2", "Terapia Física"}:
+            return True, "Terapia Física", None
+        if m in {"3", "Terapia domiciliaria"}:
+            return True, "Terapia domiciliaria", None
+        return False, None, "Responde con 1, 2  o 3"
 
     if t == "yesno":
         m = msg.lower()
