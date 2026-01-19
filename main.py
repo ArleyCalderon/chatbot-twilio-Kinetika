@@ -1,3 +1,4 @@
+#region import modules
 import os
 import json
 import re
@@ -6,12 +7,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 import psycopg
-
 app = FastAPI()
+#endregion
+#region Preguntas 
 
-# =========================
-# Preguntas (estructura pro)
-# =========================
 QUESTIONS = [
     # Identificación
     {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names"},
@@ -34,8 +33,8 @@ QUESTIONS = [
 
     # Salud
     {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo\n12) No sabe", "type": "regimen"},
-    {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "text_min3"},
-    {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "text_min3"},
+    {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "tiposeguro"},
+    {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "tipoafiliacion"},
 
 
     # Condicional
@@ -44,7 +43,7 @@ QUESTIONS = [
      "condition": lambda data: data.get("discapacidad") == "SI"},
 
     # Emergencia
-    {"key": "nombre_acompanante", "text": "Nombre de acompañante (si aplica). Si no, escribe NO.", "type": "optional_name"},
+    {"key": "nombre_acompanante", "text": "Nombre de contacto de emergencia", "type": "optional_name"},
     {"key": "telefono_emergencia", "text": "Teléfono de emergencia (solo números):", "type": "phone"},
 
      # Cita Component 
@@ -54,13 +53,9 @@ QUESTIONS = [
      {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
 
 ]
- 
-# =========================
-# DB
-# =========================
+#endregion
+#region Database Setup
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -120,11 +115,9 @@ def delete_session(from_number: str):
         with conn.cursor() as cur:
             cur.execute("DELETE FROM sessions WHERE from_number = %s;", (from_number,))
             conn.commit()
+#endregion
+#region Normalización / Validación
 
-
-# =========================
-# Normalización / Validación
-# ========================= 
 DOC_MAP = {
     "1": "Cédula de ciudadanía", "cc": "Cédula de ciudadanía", "c.c": "Cédula de ciudadanía", "cedula": "Cédula de ciudadanía", "cédula": "Cédula de ciudadanía",
     "2": "Cédula de extranjería", "ce": "Cédula de extranjería", "c.e": "Cédula de extranjería",
@@ -219,6 +212,28 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         if m in {"2", "femenino", "f"}:
             return True, "FEMENINO", None
         return False, None, "Responde con 1 (Masculino) o 2 (Femenino)."
+    
+    if t == "tiposeguro":
+        m = msg.lower()
+        if m in {"1", "arl"}:
+            return True, "ARL", None
+        if m in {"2", "eps"}:
+            return True, "EPS", None
+        if m in {"3", "particular"}:
+            return True, "Particular", None
+        if m in {"4", "poliza"}:
+            return True, "Póliza", None
+        if m in {"5", "soat"}:
+            return True, "SOAT", None
+        return False, None, "Responde con 1, 2, 3, 4 o 5."
+    
+    if t == "tipoafiliacion":
+        m = msg.lower()
+        if m in {"1", "cotizante"}:
+            return True, "Cotizante", None
+        if m in {"2", "beneficiario"}:
+            return True, "Beneficiario", None
+        return False, None, "Responde con 1 (Cotizante) o 2 (Beneficiario)."
 
     if t == "dob":
         try:
@@ -326,10 +341,8 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         return True, msg, None
 
     return True, msg, None
-
-
-# =========================
-# Webhook Twilio WhatsApp
+#endregion
+#region Webhook Twilio WhatsApp
 # =========================
 @app.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
@@ -378,3 +391,4 @@ async def whatsapp_webhook(request: Request):
         delete_session(from_number)
 
     return Response(content=str(resp), media_type="application/xml")
+#endregion
