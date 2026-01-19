@@ -78,6 +78,18 @@ def init_db():
                     updated_at TIMESTAMPTZ NOT NULL
                 );
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS submissions (
+                    id BIGSERIAL PRIMARY KEY,
+                    from_number TEXT NOT NULL,
+                    flow TEXT NOT NULL,
+                    message_sid TEXT UNIQUE,
+                    data JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+
+
             conn.commit()
 
 
@@ -95,6 +107,18 @@ def load_session(from_number: str):
                 return None
             step, data = row
             return {"step": step, "data": data}
+
+def save_submission(from_number: str, flow: str, data: dict, message_sid: str | None = None):
+    now = datetime.now(timezone.utc)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO submissions (from_number, flow, message_sid, data, created_at)
+                VALUES (%s, %s, %s, %s::jsonb, %s)
+                ON CONFLICT (message_sid) DO NOTHING;
+            """, (from_number, flow, message_sid, json.dumps(data), now))
+            conn.commit()
+
 
 
 def save_session(from_number: str, step: int, data: dict):
@@ -359,7 +383,7 @@ async def whatsapp_webhook(request: Request):
     form = await request.form()
     incoming_msg = (form.get("Body") or "").strip()
     from_number = form.get("From")
-
+    message_sid = form.get("MessageSid")
     resp = MessagingResponse()
     session = load_session(from_number)
 
@@ -405,6 +429,8 @@ async def whatsapp_webhook(request: Request):
 
         data["cedula_cancelacion"] = digits
         save_session(from_number, step=-3, data=data)
+        
+        save_submission(from_number, data.get("flow","cancelat"), data, message_sid)
 
         # Por ahora: respuesta dummy
         resp.message(f"Listo ✅ Estoy procesando la cancelación para la cédula {digits}.")
@@ -437,6 +463,9 @@ async def whatsapp_webhook(request: Request):
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
+
+        save_submission(from_number, data.get("flow","agendar"), data, message_sid)
+
         resp.message("Perfecto ✅\nSe dará respuesta a su solicitud de 2 a 3 días hábiles.")
         print(f"[CAPTURA] from={from_number} data={data}")
         delete_session(from_number)
