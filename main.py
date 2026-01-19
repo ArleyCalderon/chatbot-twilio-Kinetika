@@ -342,7 +342,113 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     return True, msg, None
 #endregion
-#region Webhook Twilio WhatsApp
+# region Flow menu
+MENU_TEXT = (
+    "Hola 👋 ¿Qué deseas hacer?\n"
+    "1) Agendar cita\n"
+    "2) Cancelar cita\n\n"
+    "Responde con 1 o 2"
+)
+
+CANCEL_PROMPT = "Para cancelar, escribe tu número de cédula (solo números):"
+# endregion
+# region Webhook Twilio WhatsApp
+# =========================
+@app.post("/whatsapp/webhook")
+async def whatsapp_webhook(request: Request):
+    form = await request.form()
+    incoming_msg = (form.get("Body") or "").strip()
+    from_number = form.get("From")
+
+    resp = MessagingResponse()
+    session = load_session(from_number)
+
+    # Usuario nuevo -> mostrar menú (step = -1)
+    if session is None:
+        save_session(from_number, step=-1, data={})
+        resp.message(MENU_TEXT)
+        return Response(content=str(resp), media_type="application/xml")
+
+    step = session["step"]
+    data = session["data"] or {}
+
+    # -------------------------
+    # STEP -1: Menú principal
+    # -------------------------
+    if step == -1:
+        m = incoming_msg.lower().strip()
+        if m in {"1", "agendar", "agendar cita", "agenda", "registrar", "registrar cita"}:
+            data["flow"] = "agendar"
+            step = 0
+            save_session(from_number, step=step, data=data)
+            resp.message(QUESTIONS[0]["text"])
+            return Response(content=str(resp), media_type="application/xml")
+
+        if m in {"2", "cancelar", "cancelar cita", "cancela"}:
+            data["flow"] = "cancelar"
+            step = -2  # siguiente: pedir cédula para cancelar
+            save_session(from_number, step=step, data=data)
+            resp.message(CANCEL_PROMPT)
+            return Response(content=str(resp), media_type="application/xml")
+
+        resp.message("No te entendí 😅\n" + MENU_TEXT)
+        return Response(content=str(resp), media_type="application/xml")
+
+    # ---------------------------------
+    # STEP -2: Captura cédula (cancelar)
+    # ---------------------------------
+    if step == -2:
+        digits = normalize_digits(incoming_msg)
+        if len(digits) < 6 or len(digits) > 15:
+            resp.message("La cédula debe tener entre 6 y 15 dígitos. Intenta de nuevo.")
+            return Response(content=str(resp), media_type="application/xml")
+
+        data["cedula_cancelacion"] = digits
+        save_session(from_number, step=-3, data=data)
+
+        # Aquí iría tu integración con Automation Anywhere:
+        # - buscar cliente
+        # - cancelar cita
+        # - devolver confirmación real
+        #
+        # Por ahora: respuesta dummy
+        resp.message(f"Listo ✅ Estoy procesando la cancelación para la cédula {digits}.")
+        print(f"[CANCELACION] from={from_number} data={data}")
+
+        delete_session(from_number)
+        return Response(content=str(resp), media_type="application/xml")
+
+    # -------------------------
+    # Flujo normal (agendar)
+    # -------------------------
+    # Asegura step válido (salta condicionales)
+    step = next_valid_step(step, data)
+
+    # Guardar respuesta actual con validación
+    if step < len(QUESTIONS):
+        q = QUESTIONS[step]
+        ok, normalized, error = validate_and_normalize(q, incoming_msg, data)
+        if not ok:
+            resp.message(error)
+            return Response(content=str(resp), media_type="application/xml")
+
+        data[q["key"]] = normalized
+
+        step += 1
+        step = next_valid_step(step, data)
+        save_session(from_number, step=step, data=data)
+
+    # Preguntar siguiente o terminar
+    if step < len(QUESTIONS):
+        resp.message(QUESTIONS[step]["text"])
+    else:
+        resp.message("Perfecto ✅\nSe dará respuesta a su solicitud de 2 a 3 días hábiles.")
+        print(f"[CAPTURA] from={from_number} data={data}")
+        delete_session(from_number)
+
+    return Response(content=str(resp), media_type="application/xml")
+# endregion
+#region Webhook Twilio WhatsApp Simple
 # =========================
 @app.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
