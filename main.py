@@ -60,7 +60,7 @@ QUESTIONS = [
 ]
 #endregion
 #region Database Setup
-DATABASE_URL = os.environ.get("DATABASE_URL")
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -385,7 +385,13 @@ MENU_TEXT = (
     "Responde con 1 o 2"
 )
 
-CANCEL_PROMPT = "Para cancelar, escribe tu número de cédula (solo números):"
+CANCEL_PROMPT = "Para cancelar, escribe tu número de documento (solo números):"
+CANCEL_DATE_PROMPT = (
+    "Indica la *fecha de la cita* que deseas cancelar.\n"
+    "Formato: DD/MM/AAAA\n"
+    "Ejemplo: 25/09/2026"
+)
+
 # endregion
 # region Webhook Twilio WhatsApp
 # =========================
@@ -435,20 +441,51 @@ async def whatsapp_webhook(request: Request):
     if step == -2:
         digits = normalize_digits(incoming_msg)
         if len(digits) < 6 or len(digits) > 15:
-            resp.message("La cédula debe tener entre 6 y 15 dígitos. Intenta de nuevo.")
+            resp.message("El documento debe tener entre 6 y 15 dígitos. Intenta de nuevo.")
             return Response(content=str(resp), media_type="application/xml")
 
         data["cedula_cancelacion"] = digits
         save_session(from_number, step=-3, data=data)
-        
-        save_submission(from_number, data.get("flow","cancelar"), data, message_sid)
 
-        # Por ahora: respuesta dummy
-        resp.message(f"Listo ✅ Estoy procesando la cancelación para la cédula {digits}.")
+        resp.message(CANCEL_DATE_PROMPT)
+        return Response(content=str(resp), media_type="application/xml")
+
+        #save_submission(from_number, data.get("flow","cancelar"), data, message_sid)
+
+        # ---------------------------------
+    # STEP -3: Fecha de cita a cancelar
+    # ---------------------------------
+    if step == -3:
+        try:
+            fecha = datetime.strptime(incoming_msg, "%d/%m/%Y").date()
+        except ValueError:
+            resp.message(
+                "Formato inválido 😅\n"
+                "Usa DD/MM/AAAA\n"
+                "Ejemplo: 25/09/2026"
+            )
+            return Response(content=str(resp), media_type="application/xml")
+
+        # Validación básica (opcional)
+        if fecha < date.today():
+            resp.message("La fecha no puede ser anterior a hoy 🤔. Intenta de nuevo.")
+            return Response(content=str(resp), media_type="application/xml")
+
+        data["fecha_cancelacion"] = fecha.strftime("%d/%m/%Y")
+
+        # 👉 Aquí ya tienes todo para cancelar
+        save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
+
+        resp.message(
+            f"Listo ✅\n"
+            f"Estoy procesando la cancelación de la cita del *{data['fecha_cancelacion']}*."
+        )
+
         print(f"[CANCELACION] from={from_number} data={data}")
 
         delete_session(from_number)
         return Response(content=str(resp), media_type="application/xml")
+    
 
     # -------------------------
     # Flujo normal (agendar)
@@ -477,8 +514,8 @@ async def whatsapp_webhook(request: Request):
 
         save_submission(from_number, data.get("flow","agendar"), data, message_sid)
 
-        resp.message("Perfecto ✅\nSe dará respuesta a su solicitud de 2 a 3 días hábiles.")
-        print(f"[CAPTURA] from={from_number} data={data}")
+        resp.message("Perfecto ✅\nTe remitiremos a un asesor para ayudarte con tu requerimiento\nImportante: la respuesta puede tardar debido a altos volumenes de solicitudes. Te contactaremos por este mismo medio, así que permanece atento.")
+        #print(f"[CAPTURA] from={from_number} data={data}")
         delete_session(from_number)
 
     return Response(content=str(resp), media_type="application/xml")
