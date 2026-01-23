@@ -4,7 +4,6 @@ import json
 import re
 import psycopg
 from datetime import datetime, timezone, date, timedelta
-from datetime import datetime, timezone, date
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
@@ -13,10 +12,9 @@ from psycopg_pool import ConnectionPool
 DATABASE_URL = os.environ.get("DATABASE_URL")
 pool: ConnectionPool | None = None
 app = FastAPI()
-
 #endregion
-#region Preguntas 
 
+#region Preguntas
 QUESTIONS = [
     # Identificación
     {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names"},
@@ -42,7 +40,6 @@ QUESTIONS = [
     {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "tiposeguro"},
     {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "tipoafiliacion"},
 
-
     # Condicional
     {"key": "discapacidad", "text": "¿Tienes alguna discapacidad?\n1) Sí\n2) No", "type": "yesno"},
     {"key": "cual_discapacidad", "text": "¿Cuál discapacidad tienes?", "type": "text_min3",
@@ -52,16 +49,15 @@ QUESTIONS = [
     {"key": "nombre_acompanante", "text": "Nombre de contacto de emergencia", "type": "optional_name"},
     {"key": "telefono_emergencia", "text": "Teléfono de emergencia (solo números):", "type": "phone"},
 
-     # Cita Component 
+    # Cita Component
     {"key": "tipo_cita", "text": "¿Tipo de cita?\n1) Valoración primera vez\n2) Control", "type": "tipocita"},
-    {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"}, 
+    {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"},
 
-     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
-
+    {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
 ]
 #endregion
-#region Database Setup
 
+#region Database Setup
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -71,7 +67,6 @@ def get_conn():
     if pool is None:
         raise RuntimeError("Pool no inicializado aún")
     return pool.connection()
-
 
 
 def init_db():
@@ -95,8 +90,6 @@ def init_db():
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
             """)
-
-
             conn.commit()
 
 
@@ -107,7 +100,6 @@ def on_startup():
         raise RuntimeError("Falta DATABASE_URL")
     pool = ConnectionPool(conninfo=DATABASE_URL, min_size=1, max_size=5)
     init_db()
-
 
 
 def load_session(from_number: str):
@@ -144,7 +136,6 @@ def save_submission(from_number: str, flow: str, data: dict, message_sid: str | 
             conn.commit()
 
 
-
 def save_session(from_number: str, step: int, data: dict):
     now = datetime.now(timezone.utc)
     with get_conn() as conn:
@@ -164,8 +155,8 @@ def delete_session(from_number: str):
             cur.execute("DELETE FROM sessions WHERE from_number = %s;", (from_number,))
             conn.commit()
 #endregion
-#region Normalización / Validación
 
+#region Normalización / Validación
 DOC_MAP = {
     "1": "Cédula de ciudadanía", "cc": "Cédula de ciudadanía", "c.c": "Cédula de ciudadanía", "cedula": "Cédula de ciudadanía", "cédula": "Cédula de ciudadanía",
     "2": "Cédula de extranjería", "ce": "Cédula de extranjería", "c.e": "Cédula de extranjería",
@@ -260,7 +251,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         if m in {"2", "femenino", "f"}:
             return True, "FEMENINO", None
         return False, None, "Responde con 1 (Masculino) o 2 (Femenino)."
-    
+
     if t == "tiposeguro":
         m = msg.lower()
         if m in {"1", "arl"}:
@@ -274,7 +265,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
         if m in {"5", "soat"}:
             return True, "SOAT", None
         return False, None, "Responde con 1, 2, 3, 4 o 5."
-    
+
     if t == "tipoafiliacion":
         m = msg.lower()
         if m in {"1", "cotizante"}:
@@ -315,14 +306,20 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     if t == "regimen":
         m = msg.lower()
-        mapping = {"1": "Contributivo cotizante", "2": "Subsidiado", "3": "Contributivo beneficiario", "4": "particular", "5": "No afiliado", "6": "Tomador/Amparado ARL", "7": "Tomador/Amparado SOAT", "8": "Tomador/Amparado Planes voluntarios de salud", "9": "Especial o Excepción cotizante", "10": "Especial o Excepción beneficiario", "11": "Personas privadas de la libertad a cargo del fondo","12": "NO_SABE"}
+        mapping = {
+            "1": "Contributivo cotizante", "2": "Subsidiado", "3": "Contributivo beneficiario",
+            "4": "particular", "5": "No afiliado", "6": "Tomador/Amparado ARL", "7": "Tomador/Amparado SOAT",
+            "8": "Tomador/Amparado Planes voluntarios de salud", "9": "Especial o Excepción cotizante",
+            "10": "Especial o Excepción beneficiario", "11": "Personas privadas de la libertad a cargo del fondo",
+            "12": "NO_SABE"
+        }
         if m in mapping:
             return True, mapping[m], None
-        if "Contributivo cotizante" in m:
+        if "contributivo cotizante" in m:
             return True, "Contributivo cotizante", None
         if "subsi" in m:
             return True, "Subsidiado", None
-        if "Contributivo beneficiario" in m:
+        if "contributivo beneficiario" in m:
             return True, "Contributivo beneficiario", None
         if "particular" in m:
             return True, "particular", None
@@ -346,19 +343,19 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     if t == "tipocita":
         m = msg.lower()
-        if m in {"1", "Valoración primera vez", "Valoracion primera vez"}:
+        if m in {"1", "valoración primera vez", "valoracion primera vez"}:
             return True, "Valoración primera vez", None
-        if m in {"2", "Control"}:
+        if m in {"2", "control"}:
             return True, "Control", None
         return False, None, "Responde con 1 o 2 ."
-    
+
     if t == "tiposervicio":
         m = msg.lower()
-        if m in {"1", "Hidroterapia"}:
+        if m in {"1", "hidroterapia"}:
             return True, "Hidroterapia", None
-        if m in {"2", "Terapia Física"}:
+        if m in {"2", "terapia física", "terapia fisica"}:
             return True, "Terapia Física", None
-        if m in {"3", "Terapia domiciliaria"}:
+        if m in {"3", "terapia domiciliaria"}:
             return True, "Terapia domiciliaria", None
         return False, None, "Responde con 1, 2  o 3"
 
@@ -390,6 +387,7 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
     return True, msg, None
 #endregion
+
 # region Flow menu
 MENU_TEXT = (
     "Hola 👋 ¿Qué deseas hacer?\n"
@@ -405,15 +403,28 @@ CANCEL_DATE_PROMPT = (
     "Ejemplo: 25/09/2026"
 )
 
+# ✅ Modo handoff (asesor humano)
+HANDOFF_TEXT = (
+    "Perfecto ✅\n"
+    "Te remitiremos a un asesor para ayudarte con tu requerimiento\n"
+    "Importante: la respuesta puede tardar debido a altos volumenes de solicitudes. "
+    "Te contactaremos por este mismo medio, así que permanece atento."
+)
+
+THANKS_WORDS = {
+    "gracias", "muchas gracias", "mil gracias", "ok", "oka", "listo", "vale",
+    "perfecto", "dale", "bien", "genial", "👍", "🙏"
+}
 # endregion
+
 # region Webhook Twilio WhatsApp
-# =========================
 @app.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
     form = await request.form()
     incoming_msg = (form.get("Body") or "").strip()
     from_number = form.get("From")
     message_sid = form.get("MessageSid")
+
     resp = MessagingResponse()
     session = load_session(from_number)
 
@@ -425,6 +436,35 @@ async def whatsapp_webhook(request: Request):
 
     step = session["step"]
     data = session["data"] or {}
+
+    # -------------------------
+    # STEP -9: En atención humana / handoff
+    # -------------------------
+    if step == -9:
+        m = incoming_msg.lower().strip()
+        m = " ".join(m.split())
+
+        # Si agradece, responde corto y NO reinicies
+        if m in THANKS_WORDS or m.startswith("gracias") or m.startswith("muchas gracias"):
+            resp.message("¡Con gusto! 😊")
+            return Response(content=str(resp), media_type="application/xml")
+
+        # Si quiere volver al bot explícitamente
+        if m in {"menu", "menú", "inicio", "empezar", "volver", "hola"}:
+            save_session(from_number, step=-1, data={})
+            resp.message(MENU_TEXT)
+            return Response(content=str(resp), media_type="application/xml")
+
+        # Si pide cancelar/cambiar/reprogramar, lo mandamos al menú
+        if ("cancel" in m) or ("cancela" in m) or ("reprogram" in m) or ("cambiar" in m):
+            save_session(from_number, step=-1, data={})
+            resp.message("Listo 🙂\n" + MENU_TEXT)
+            return Response(content=str(resp), media_type="application/xml")
+
+        
+        # Para cualquier otra cosa, NO responder nada (silencio total)
+        return Response(content="", status_code=204)
+
 
     # -------------------------
     # STEP -1: Menú principal
@@ -463,9 +503,7 @@ async def whatsapp_webhook(request: Request):
         resp.message(CANCEL_DATE_PROMPT)
         return Response(content=str(resp), media_type="application/xml")
 
-        #save_submission(from_number, data.get("flow","cancelar"), data, message_sid)
-
-        # ---------------------------------
+    # ---------------------------------
     # STEP -3: Fecha de cita a cancelar
     # ---------------------------------
     if step == -3:
@@ -498,7 +536,6 @@ async def whatsapp_webhook(request: Request):
 
         delete_session(from_number)
         return Response(content=str(resp), media_type="application/xml")
-    
 
     # -------------------------
     # Flujo normal (agendar)
@@ -524,12 +561,12 @@ async def whatsapp_webhook(request: Request):
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
+        #  Guardar envío una sola vez (message_sid único)
+        save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
 
-        save_submission(from_number, data.get("flow","agendar"), data, message_sid)
-
-        resp.message("Perfecto ✅\nTe remitiremos a un asesor para ayudarte con tu requerimiento\nImportante: la respuesta puede tardar debido a altos volumenes de solicitudes. Te contactaremos por este mismo medio, así que permanece atento.")
-        #print(f"[CAPTURA] from={from_number} data={data}")
-        delete_session(from_number)
+        #  Entrar en modo handoff en vez de borrar sesión
+        resp.message(HANDOFF_TEXT)
+        save_session(from_number, step=-9, data=data)
 
     return Response(content=str(resp), media_type="application/xml")
 # endregion
