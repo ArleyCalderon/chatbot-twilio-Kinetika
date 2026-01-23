@@ -410,13 +410,17 @@ CANCEL_DATE_PROMPT = (
     "Ejemplo: 25/09/2026"
 )
 
-# ✅ Modo handoff (asesor humano)
+#  Modo handoff (asesor humano)
 HANDOFF_TEXT = (
     "Perfecto ✅\n"
-    "Te remitiremos a un asesor para ayudarte con tu requerimiento\n"
-    "Importante: la respuesta puede tardar debido a altos volumenes de solicitudes. "
-    "Te contactaremos por este mismo medio, así que permanece atento."
+    "Te remitiremos a un asesor para ayudarte con tu requerimiento.\n\n"
+    "📌 Importante:\n"
+    "• La respuesta puede tardar debido a altos volúmenes de solicitudes.\n"
+    "• Te contactaremos por este mismo medio.\n\n"
+    "👉 Si en cualquier momento deseas volver al bot, escribe *menu*."
 )
+
+
 
 THANKS_WORDS = {
     "gracias", "muchas gracias", "mil gracias", "ok", "oka", "listo", "vale",
@@ -442,19 +446,6 @@ async def whatsapp_webhook(request: Request):
     session = load_session(from_number)
     step = session["step"] if session else None
     data = (session["data"] or {}) if session else {}
-
-    # -------------------------
-    # Comandos del asesor (por usuario)
-    # -------------------------
-    if cmd.startswith("/bot off"):
-        # Mantén data, no la borres
-        save_session(from_number, step=-9, data=data)
-        return Response(status_code=204)
-
-    if cmd.startswith("/bot on"):
-        delete_session(from_number)
-        resp.message("👋 ¿En qué más puedo ayudarte?\n\n" + MENU_TEXT)
-        return Response(content=str(resp), media_type="application/xml")
 
     # -------------------------
     # Usuario nuevo -> mostrar menú (step = -1)
