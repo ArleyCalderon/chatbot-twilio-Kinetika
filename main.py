@@ -116,12 +116,19 @@ def load_session(from_number: str):
 
             step, data, updated_at = row
 
-            # ⏰ Expiración (ej: 24 horas)
-            if datetime.now(timezone.utc) - updated_at > timedelta(hours=24):
+            # ⏰ Expiración:
+            # - Flujo normal: 24h
+            # - Handoff (asesor): 72h (3 días)
+            expiry_hours = 24
+            if step == -9:
+                expiry_hours = 72
+
+            if datetime.now(timezone.utc) - updated_at > timedelta(hours=expiry_hours):
                 delete_session(from_number)
                 return None
 
             return {"step": step, "data": data}
+
 
 
 def save_submission(from_number: str, flow: str, data: dict, message_sid: str | None = None):
@@ -426,51 +433,60 @@ async def whatsapp_webhook(request: Request):
     message_sid = form.get("MessageSid")
 
     resp = MessagingResponse()
-    session = load_session(from_number)
 
+    # Normalización única (NO la sobreescribas después)
+    cmd = (incoming_msg or "").lower().strip()
+    cmd = " ".join(cmd.split())  # quita espacios dobles
+
+    # Cargar sesión UNA sola vez
+    session = load_session(from_number)
+    step = session["step"] if session else None
+    data = (session["data"] or {}) if session else {}
+
+    # -------------------------
+    # Comandos del asesor (por usuario)
+    # -------------------------
+    if cmd.startswith("/bot off"):
+        # Mantén data, no la borres
+        save_session(from_number, step=-9, data=data)
+        return Response(status_code=204)
+
+    if cmd.startswith("/bot on"):
+        delete_session(from_number)
+        resp.message("👋 ¿En qué más puedo ayudarte?\n\n" + MENU_TEXT)
+        return Response(content=str(resp), media_type="application/xml")
+
+    # -------------------------
     # Usuario nuevo -> mostrar menú (step = -1)
+    # -------------------------
     if session is None:
         save_session(from_number, step=-1, data={})
         resp.message(MENU_TEXT)
         return Response(content=str(resp), media_type="application/xml")
 
-    step = session["step"]
-    data = session["data"] or {}
-
     # -------------------------
-    # STEP -9: En atención humana / handoff
+    # STEP -9: En atención humana / handoff (silencio total)
     # -------------------------
     if step == -9:
-        m = incoming_msg.lower().strip()
-        m = " ".join(m.split())
+        m = cmd  # ya está normalizado
 
-        # Si agradece, responde corto y NO reinicies
-        if m in THANKS_WORDS or m.startswith("gracias") or m.startswith("muchas gracias"):
-            resp.message("¡Con gusto! 😊")
-            return Response(content=str(resp), media_type="application/xml")
-
-        # Si quiere volver al bot explícitamente
         if m in {"menu", "menú", "inicio", "empezar", "volver", "hola"}:
             save_session(from_number, step=-1, data={})
             resp.message(MENU_TEXT)
             return Response(content=str(resp), media_type="application/xml")
 
-        # Si pide cancelar/cambiar/reprogramar, lo mandamos al menú
         if ("cancel" in m) or ("cancela" in m) or ("reprogram" in m) or ("cambiar" in m):
             save_session(from_number, step=-1, data={})
             resp.message("Listo 🙂\n" + MENU_TEXT)
             return Response(content=str(resp), media_type="application/xml")
 
-        
-        # Para cualquier otra cosa, NO responder nada (silencio total)
         return Response(content="", status_code=204)
-
 
     # -------------------------
     # STEP -1: Menú principal
     # -------------------------
     if step == -1:
-        m = incoming_msg.lower().strip()
+        m = cmd
         if m in {"1", "agendar", "agendar cita", "agenda", "registrar", "registrar cita"}:
             data["flow"] = "agendar"
             step = 0
@@ -480,7 +496,7 @@ async def whatsapp_webhook(request: Request):
 
         if m in {"2", "cancelar", "cancelar cita", "cancela"}:
             data["flow"] = "cancelar"
-            step = -2  # siguiente: pedir cédula para cancelar
+            step = -2
             save_session(from_number, step=step, data=data)
             resp.message(CANCEL_PROMPT)
             return Response(content=str(resp), media_type="application/xml")
@@ -499,7 +515,6 @@ async def whatsapp_webhook(request: Request):
 
         data["cedula_cancelacion"] = digits
         save_session(from_number, step=-3, data=data)
-
         resp.message(CANCEL_DATE_PROMPT)
         return Response(content=str(resp), media_type="application/xml")
 
@@ -517,14 +532,11 @@ async def whatsapp_webhook(request: Request):
             )
             return Response(content=str(resp), media_type="application/xml")
 
-        # Validación básica (opcional)
         if fecha < date.today():
             resp.message("La fecha no puede ser anterior a hoy 🤔. Intenta de nuevo.")
             return Response(content=str(resp), media_type="application/xml")
 
         data["fecha_cancelacion"] = fecha.strftime("%d/%m/%Y")
-
-        # 👉 Aquí ya tienes todo para cancelar
         save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
 
         resp.message(
@@ -540,10 +552,8 @@ async def whatsapp_webhook(request: Request):
     # -------------------------
     # Flujo normal (agendar)
     # -------------------------
-    # Asegura step válido (salta condicionales)
     step = next_valid_step(step, data)
 
-    # Guardar respuesta actual con validación
     if step < len(QUESTIONS):
         q = QUESTIONS[step]
         ok, normalized, error = validate_and_normalize(q, incoming_msg, data)
@@ -552,21 +562,17 @@ async def whatsapp_webhook(request: Request):
             return Response(content=str(resp), media_type="application/xml")
 
         data[q["key"]] = normalized
-
         step += 1
         step = next_valid_step(step, data)
         save_session(from_number, step=step, data=data)
 
-    # Preguntar siguiente o terminar
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
-        #  Guardar envío una sola vez (message_sid único)
         save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
-
-        #  Entrar en modo handoff en vez de borrar sesión
         resp.message(HANDOFF_TEXT)
         save_session(from_number, step=-9, data=data)
 
     return Response(content=str(resp), media_type="application/xml")
+
 # endregion
