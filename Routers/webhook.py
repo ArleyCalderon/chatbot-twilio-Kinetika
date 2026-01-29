@@ -17,9 +17,6 @@ async def whatsapp_webhook(request: Request):
 
     form = await request.form()
     
-
-    
-
     save_message(from_number, "in", incoming_msg, message_sid)
 
     resp = MessagingResponse()
