@@ -271,7 +271,7 @@ from urllib.parse import unquote
 import Core.db as db
 
 @router.get("/chat/messages")
-def chat_messages(request: Request, from_number: str):
+def chat_messages(request: Request, from_number: str = Query(..., alias="from")):
     # En APIs: NO redirect, 401
     if not request.session.get("user"):
         raise HTTPException(status_code=401, detail="Not logged in")
