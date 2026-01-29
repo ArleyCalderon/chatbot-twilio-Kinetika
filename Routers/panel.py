@@ -150,7 +150,7 @@ def close_chat(request: Request, from_number: str):
     return RedirectResponse(url="/panel", status_code=302)
 
 @router.get("/chat", response_class=HTMLResponse)
-def panel_chat(request: Request, from_number: str):
+def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     redirect = _require_login(request)
     if redirect:
         return redirect
