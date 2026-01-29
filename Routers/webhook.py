@@ -11,11 +11,14 @@ from fastapi.responses import Response
 router = APIRouter()
 @router.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
-    form = await request.form()
-    incoming_msg = (form.get("Body") or "").strip()
-
     from_number = form.get("From")
     message_sid = form.get("MessageSid")
+    incoming_msg = (form.get("Body") or "").strip()
+
+    form = await request.form()
+    
+
+    
 
     save_message(from_number, "in", incoming_msg, message_sid)
 

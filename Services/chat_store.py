@@ -1,6 +1,9 @@
 from Core.db import get_conn
 from datetime import datetime, timezone, timedelta
 import json
+# Services/chat_store.py
+from Core.db import pool
+
 def load_session(from_number: str):
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -59,4 +62,32 @@ def delete_session(from_number: str):
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM sessions WHERE from_number = %s;", (from_number,))
+            conn.commit()
+
+
+
+def save_message(from_number: str, direction: str, body: str, twilio_sid: str | None = None):
+    """
+    Guarda mensajes entrantes y salientes para ver historial en el panel.
+    direction: 'in' o 'out'
+    """
+    if not from_number or not body:
+        return
+
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id BIGSERIAL PRIMARY KEY,
+                    from_number TEXT NOT NULL,
+                    direction TEXT NOT NULL CHECK (direction IN ('in','out')),
+                    body TEXT NOT NULL,
+                    twilio_sid TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+            cur.execute("""
+                INSERT INTO messages (from_number, direction, body, twilio_sid)
+                VALUES (%s, %s, %s, %s);
+            """, (from_number, direction, body, twilio_sid))
             conn.commit()
