@@ -25,11 +25,9 @@
             <td>{{ item.reason }}</td>
             <td>{{ item.updated_at }}</td>
             <td>
-              <!-- Por ahora no existe el chat, luego lo conectamos -->
-              <a class="btn btn-sm btn-primary"
-                href="/panel/chat/{{ item.from_number | urlencode }}">
-                Abrir
-              </a>
+              
+              <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
+
 
             </td>
           </tr>

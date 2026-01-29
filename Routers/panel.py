@@ -1,7 +1,16 @@
 import os
-from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from Services.chat_store import delete_session, save_session  # según lo que uses
+from urllib.parse import quote
+from fastapi import APIRouter, Request, Form, Query
+from fastapi.responses import HTMLResponse, RedirectResponse
+import os
+from twilio.rest import Client
+from Core.db import pool
+from Services.chat_store import save_message, delete_messages, delete_session
+
+
 
 import json
 
@@ -85,9 +94,151 @@ def panel_home(request: Request):
             "from_number": from_number,
             "reason": data.get("flow", "Atención humana"),
             "updated_at": updated_at.strftime("%Y-%m-%d %H:%M"),
+            "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
         })
 
     return templates.TemplateResponse(
         "panel_list.html",
         {"request": request, "pending": pending, "user": request.session.get("user")},
     )
+
+from Services.chat_store import delete_messages
+
+
+@router.post("/chat/{from_number}/close")
+def close_chat(request: Request, from_number: str):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    # 1) borrar historial
+    delete_messages(from_number)
+
+    # 2) sacar del handoff: puedes borrar sesión o devolverla a menú
+    # Opción A: volver a menú
+    #save_session(from_number, step=-1, data={})
+    # Opción B: borrar sesión
+    delete_session(from_number)
+
+    return RedirectResponse(url="/panel", status_code=302)
+
+@router.get("/chat", response_class=HTMLResponse)
+def chat_view(request: Request, from_number: str = Query(..., alias="from")):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    rows = []
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT direction, body, created_at
+                FROM messages
+                WHERE from_number = %s
+                ORDER BY created_at ASC
+                LIMIT 500;
+            """, (from_number,))
+            rows = cur.fetchall()
+
+    messages = []
+    for direction, body, created_at in rows:
+        messages.append({
+            "direction": direction,
+            "body": body,
+            "created_at": created_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
+    return templates.TemplateResponse(
+        "panel_chat.html",
+        {
+            "request": request,
+            "user": request.session.get("user"),
+            "from_number": from_number,
+            "messages": messages,
+        },
+    )
+
+
+@router.post("/chat/send")
+def chat_send(
+    request: Request,
+    from_number: str = Form(...),
+    message: str = Form(...),
+):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    message = (message or "").strip()
+    if not message:
+        return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+
+    # Twilio config
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    wa_from = os.environ.get("TWILIO_WHATSAPP_FROM")  # ej: "whatsapp:+14155238886" o tu número WA
+
+    if not account_sid or not auth_token or not wa_from:
+        # Si no están las env vars, no tumbes el panel: muestra error simple
+        return templates.TemplateResponse(
+            "panel_chat.html",
+            {
+                "request": request,
+                "user": request.session.get("user"),
+                "from_number": from_number,
+                "messages": [],
+                "error": "Faltan TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM en Render.",
+            },
+            status_code=500,
+        )
+
+    client = Client(account_sid, auth_token)
+
+    tw_sid = None
+    try:
+        sent = client.messages.create(
+            from_=wa_from,
+            to=from_number,
+            body=message,
+        )
+        tw_sid = sent.sid
+    except Exception as e:
+        return templates.TemplateResponse(
+            "panel_chat.html",
+            {
+                "request": request,
+                "user": request.session.get("user"),
+                "from_number": from_number,
+                "messages": [],
+                "error": f"Error enviando por Twilio: {e}",
+            },
+            status_code=500,
+        )
+
+    # Guardar como salida en DB
+    try:
+        save_message(from_number, "out", message, tw_sid)
+    except Exception as e:
+        print(f"[WARN] save_message(out) failed: {e}")
+
+    return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+
+@router.post("/chat/close")
+def chat_close(request: Request, from_number: str = Form(...)):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    # borra historial
+    try:
+        delete_messages(from_number)
+    except Exception as e:
+        print(f"[WARN] delete_messages failed: {e}")
+
+    # resetea conversación (para que el bot vuelva a menú)
+    try:
+        delete_session(from_number)
+    except Exception as e:
+        print(f"[WARN] delete_session failed: {e}")
+
+    return RedirectResponse(url="/panel", status_code=302)
