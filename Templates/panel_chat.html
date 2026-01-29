@@ -6,7 +6,6 @@
   <div>
     <h4 class="mb-0">Chat</h4>
     <div class="text-muted small"><code>{{ from_number }}</code></div>
-    <div class="text-muted small"><code>{{ from_number }}</code></div>
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary btn-sm" href="/panel">← Volver</a>
@@ -26,7 +25,7 @@
 {% endif %}
 
 <div class="card shadow-sm mb-3">
-  <div class="card-body" style="max-height: 60vh; overflow-y: auto;">
+  <div id="chatBox" class="card-body" style="max-height: 60vh; overflow-y: auto;">
     {% if messages|length == 0 %}
       <div class="text-muted">No hay mensajes guardados aún.</div>
     {% endif %}
@@ -63,7 +62,11 @@
 </div>
 <script>
   const fromNumber = "{{ from_number | urlencode }}";
-  const chatBox = document.querySelector(".card-body");
+  const chatBox = document.getElementById("chatBox");
+
+  function isNearBottom(el, threshold = 80) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }
 
   async function refreshMessages() {
     try {
@@ -73,12 +76,17 @@
       const messages = await res.json();
       if (!messages.length) return;
 
+      const shouldScroll = isNearBottom(chatBox);
+
       chatBox.innerHTML = "";
 
       messages.forEach(m => {
         const wrapper = document.createElement("div");
-        wrapper.className = "mb-3 d-flex " +
-          (m.direction === "out" ? "justify-content-end" : "justify-content-start");
+        wrapper.className =
+          "mb-3 d-flex " +
+          (m.direction === "out"
+            ? "justify-content-end"
+            : "justify-content-start");
 
         wrapper.innerHTML = `
           <div class="p-2 rounded border" style="max-width:75%">
@@ -88,20 +96,27 @@
             <div style="white-space: pre-wrap;">${m.body}</div>
           </div>
         `;
+
         chatBox.appendChild(wrapper);
       });
 
-      chatBox.scrollTop = chatBox.scrollHeight;
+      if (shouldScroll) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
     } catch (e) {
       console.error("refreshMessages error", e);
     }
   }
 
-  // primera carga
+  // Al cargar la página, baja al final
+  window.addEventListener("load", () => {
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+
+  // Primera carga
   refreshMessages();
 
-  // refrescar cada 5s
+  // Refrescar cada 5s (o 10s si quieres)
   setInterval(refreshMessages, 5000);
 </script>
-
 {% endblock %}

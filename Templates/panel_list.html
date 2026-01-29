@@ -22,8 +22,12 @@
         {% for item in pending %}
           <tr>
             <td><code>{{ item.from_number }}</code></td>
+            <td>{{ item.cedula }}</td>
+            <td>{{ item.nombre }}</td>
             <td>{{ item.reason }}</td>
             <td>{{ item.updated_at }}</td>
+            
+            
             <td>
               
               <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
