@@ -265,11 +265,16 @@ def chat_close(request: Request, from_number: str = Form(...)):
     return RedirectResponse(url="/panel", status_code=302)
 
 
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+from urllib.parse import unquote
+import Core.db as db
+
 @router.get("/chat/messages")
 def chat_messages(request: Request, from_number: str):
-    redirect = _require_login(request)
-    if redirect:
-        return redirect
+    # En APIs: NO redirect, 401
+    if not request.session.get("user"):
+        raise HTTPException(status_code=401, detail="Not logged in")
 
     from_number = unquote(from_number)
 
@@ -280,7 +285,8 @@ def chat_messages(request: Request, from_number: str):
                 SELECT direction, body, created_at
                 FROM messages
                 WHERE from_number = %s
-                ORDER BY created_at ASC;
+                ORDER BY created_at ASC
+                LIMIT 500;
             """, (from_number,))
             rows = cur.fetchall()
 
