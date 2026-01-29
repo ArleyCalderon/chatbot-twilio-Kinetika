@@ -2,9 +2,10 @@ import os
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from Core.db import pool
+
 import json
 
+import Core.db as db
 
 router = APIRouter(prefix="/panel", tags=["panel"])
 templates = Jinja2Templates(directory="Templates")
@@ -50,7 +51,7 @@ def logout(request: Request):
 
 
 import json
-from Core.db import pool
+
 
 @router.get("", response_class=HTMLResponse)  # /panel
 def panel_home(request: Request):
@@ -59,7 +60,7 @@ def panel_home(request: Request):
         return redirect
 
     rows = []
-    with pool.connection() as conn:
+    with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT from_number, data, updated_at

@@ -26,7 +26,11 @@
             <td>{{ item.updated_at }}</td>
             <td>
               <!-- Por ahora no existe el chat, luego lo conectamos -->
-              <button class="btn btn-sm btn-secondary" disabled>Abrir</button>
+              <a class="btn btn-sm btn-primary"
+                href="/panel/chat/{{ item.from_number | urlencode }}">
+                Abrir
+              </a>
+
             </td>
           </tr>
         {% endfor %}
