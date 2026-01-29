@@ -9,12 +9,10 @@ import os
 from twilio.rest import Client
 from Core.db import pool
 from Services.chat_store import save_message, delete_messages, delete_session
-
-
-
 import json
-
+from fastapi.responses import JSONResponse
 import Core.db as db
+from urllib.parse import unquote
 
 router = APIRouter(prefix="/panel", tags=["panel"])
 templates = Jinja2Templates(directory="Templates")
@@ -64,6 +62,7 @@ import json
 
 @router.get("", response_class=HTMLResponse)  # /panel
 def panel_home(request: Request):
+    
     redirect = _require_login(request)
     if redirect:
         return redirect
@@ -90,19 +89,38 @@ def panel_home(request: Request):
         elif data is None:
             data = {}
 
+        nombre = _display_name(data)
+        cedula = _display_cedula(data)
+
         pending.append({
             "from_number": from_number,
+            "nombre": nombre,
+            "cedula": cedula,
             "reason": data.get("flow", "Atención humana"),
             "updated_at": updated_at.strftime("%Y-%m-%d %H:%M"),
             "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
         })
+
+        
 
     return templates.TemplateResponse(
         "panel_list.html",
         {"request": request, "pending": pending, "user": request.session.get("user")},
     )
 
-from Services.chat_store import delete_messages
+
+def _display_name(data: dict) -> str:
+    parts = [
+        data.get("primer_nombre"),
+        data.get("segundo_nombre"),
+        data.get("primer_apellido"),
+        data.get("segundo_apellido"),
+    ]
+    parts = [p for p in parts if p]
+    return " ".join(parts) if parts else "(sin nombre)"
+
+def _display_cedula(data: dict) -> str:
+    return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
 
 
 @router.post("/chat/{from_number}/close")
@@ -170,8 +188,10 @@ def chat_send(
         return redirect
 
     message = (message or "").strip()
-    if not message:
-        return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+    if not message: 
+        encoded = quote(from_number, safe="")
+        return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
+        #return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
 
     # Twilio config
     account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
@@ -220,8 +240,9 @@ def chat_send(
         save_message(from_number, "out", message, tw_sid)
     except Exception as e:
         print(f"[WARN] save_message(out) failed: {e}")
-
-    return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+    encoded = quote(from_number, safe="")
+    return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
+    #return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
 
 @router.post("/chat/close")
 def chat_close(request: Request, from_number: str = Form(...)):
@@ -242,3 +263,32 @@ def chat_close(request: Request, from_number: str = Form(...)):
         print(f"[WARN] delete_session failed: {e}")
 
     return RedirectResponse(url="/panel", status_code=302)
+
+
+@router.get("/chat/messages")
+def chat_messages(request: Request, from_number: str):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    from_number = unquote(from_number)
+
+    messages = []
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT direction, body, created_at
+                FROM messages
+                WHERE from_number = %s
+                ORDER BY created_at ASC;
+            """, (from_number,))
+            rows = cur.fetchall()
+
+    for direction, body, created_at in rows:
+        messages.append({
+            "direction": direction,
+            "body": body,
+            "created_at": created_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
+    return JSONResponse(messages)

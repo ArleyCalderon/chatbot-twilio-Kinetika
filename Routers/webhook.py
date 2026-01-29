@@ -13,8 +13,9 @@ async def whatsapp_webhook(request: Request):
     form = await request.form()
     from_number = form.get("From")
     message_sid = form.get("MessageSid")
-    incoming_msg = (form.get("Body") or "").strip()    
-    save_message(from_number, "in", incoming_msg, message_sid)
+    incoming_msg = (form.get("Body") or "").strip()
+        
+    #save_message(from_number, "in", incoming_msg, message_sid)
 
     resp = MessagingResponse()
 
@@ -39,6 +40,7 @@ async def whatsapp_webhook(request: Request):
     # STEP -9: En atención humana / handoff (silencio total)
     # -------------------------
     if step == -9:
+        save_message(from_number, "in", incoming_msg, message_sid)
         m = cmd  # ya está normalizado
 
         if m in {"menu", "menú", "inicio", "empezar", "volver", "hola"}:
