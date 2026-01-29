@@ -129,7 +129,7 @@ def chat_view(request: Request, from_number: str = Query(..., alias="from")):
         return redirect
 
     rows = []
-    with pool.connection() as conn:
+    with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT direction, body, created_at
