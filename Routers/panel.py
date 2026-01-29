@@ -13,6 +13,11 @@ import json
 from fastapi.responses import JSONResponse
 import Core.db as db
 from urllib.parse import unquote
+from zoneinfo import ZoneInfo
+local_tz = ZoneInfo("America/Bogota")
+
+
+
 
 router = APIRouter(prefix="/panel", tags=["panel"])
 templates = Jinja2Templates(directory="Templates")
@@ -121,6 +126,10 @@ def _display_name(data: dict) -> str:
 
 def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
+def _display_tipo_servicio(data: dict) -> str:
+    return data.get("tipo_servicio")
+def _display_tipo_cita(data: dict) -> str:
+    return data.get("tipo_cita") 
 
 
 @router.post("/chat/{from_number}/close")
@@ -141,30 +150,46 @@ def close_chat(request: Request, from_number: str):
     return RedirectResponse(url="/panel", status_code=302)
 
 @router.get("/chat", response_class=HTMLResponse)
-def chat_view(request: Request, from_number: str = Query(..., alias="from")):
+def panel_chat(request: Request, from_number: str):
     redirect = _require_login(request)
     if redirect:
         return redirect
 
-    rows = []
+    # traer sesión
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT data
+                FROM sessions
+                WHERE from_number = %s
+            """, (from_number,))
+            row = cur.fetchone()
+
+    data = row[0] if row else {}
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    nombre = _display_name(data)
+    cedula = _display_cedula(data)
+    tipo_servicio = _display_tipo_servicio(data)
+    tipo_cita = _display_tipo_cita(data)
+
+    # traer mensajes si los usas
+    messages = []
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT direction, body, created_at
                 FROM messages
                 WHERE from_number = %s
-                ORDER BY created_at ASC
-                LIMIT 500;
+                ORDER BY created_at ASC;
             """, (from_number,))
-            rows = cur.fetchall()
-
-    messages = []
-    for direction, body, created_at in rows:
-        messages.append({
-            "direction": direction,
-            "body": body,
-            "created_at": created_at.strftime("%Y-%m-%d %H:%M"),
-        })
+            for d, b, c in cur.fetchall():
+                messages.append({
+                    "direction": d,
+                    "body": b,
+                    "created_at": c.strftime("%Y-%m-%d %H:%M"),
+                })
 
     return templates.TemplateResponse(
         "panel_chat.html",
@@ -172,6 +197,10 @@ def chat_view(request: Request, from_number: str = Query(..., alias="from")):
             "request": request,
             "user": request.session.get("user"),
             "from_number": from_number,
+            "nombre": nombre,
+            "cedula": cedula,
+            "tipo_servicio": tipo_servicio,
+            "tipo_cita": tipo_cita,
             "messages": messages,
         },
     )
@@ -294,7 +323,7 @@ def chat_messages(request: Request, from_number: str = Query(..., alias="from"))
         messages.append({
             "direction": direction,
             "body": body,
-            "created_at": created_at.strftime("%Y-%m-%d %H:%M"),
+            "created_at": created_at.astimezone(local_tz).strftime("%Y-%m-%d %H:%M"),
         })
 
     return JSONResponse(messages)

@@ -4,12 +4,11 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import PlainTextResponse
 from Core.db import init_pool, init_db
 from Routers.webhook import router as webhook_router
-
-# 👇 IMPORT DEL PANEL
+from fastapi.staticfiles import StaticFiles
 from Routers.panel import router as panel_router
 
 app = FastAPI()
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ.get("PANEL_SECRET_KEY", "dev-secret-change-me"),

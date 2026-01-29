@@ -3,12 +3,22 @@
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0">Chat {{ from_number }}</h4>
+  <!--<div>
+   
     <div class="text-muted small"><code>{{ from_number }}</code></div>
     <div class="text-muted small"><code>{{ nombre }}</code></div>
     <div class="text-muted small"><code>{{ cedula }}</code></div>
+  </div>-->
+  <div class="text-muted small">
+    <h4 class="mb-0">Chat {{ from_number }}</h4>
+    <div><code>{{ from_number }}</code></div>
+    <div>Paciente: <strong>{{ nombre }}</strong></div>
+    <div>Documento:  {{ cedula }}</div>
+    <div>Tipo Cita:  {{ tipo_cita }}</div>
+    <div>Tipo Servicio:  {{ tipo_servicio }}</div>
+    
   </div>
+
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary btn-sm" href="/panel">← Volver</a>
 
@@ -62,6 +72,9 @@
     </form>
   </div>
 </div>
+<audio id="notifSound" preload="auto">
+  <source src="/static/notify.mp3" type="audio/mpeg">
+</audio>
 <script>
   const fromNumber = "{{ from_number | urlencode }}";
   const chatBox = document.getElementById("chatBox");
@@ -69,8 +82,11 @@
   function isNearBottom(el, threshold = 80) {
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
-
+  let lastMessageCount = 0;
+  const notifSound = document.getElementById("notifSound");
+  
   async function refreshMessages() {
+    
     try {
       const res = await fetch(`/panel/chat/messages?from=${fromNumber}`);
       if (!res.ok) return;
@@ -87,6 +103,20 @@
       const shouldScroll = isNearBottom(chatBox);
 
       chatBox.innerHTML = "";
+      const newCount = messages.length;
+
+      // Si hay mensajes nuevos
+      if (newCount > lastMessageCount) {
+        const lastMsg = messages[messages.length - 1];
+
+        // Sonido SOLO si es mensaje del cliente
+        if (lastMsg.direction === "in") {
+          notifSound.currentTime = 0;
+          notifSound.play().catch(() => {});
+        }
+      }
+
+      lastMessageCount = newCount;
 
       messages.forEach(m => {
         const wrapper = document.createElement("div");
@@ -127,4 +157,16 @@
   // Refrescar cada 5s (o 10s si quieres)
   setInterval(refreshMessages, 5000);
 </script>
+<script>
+  const textarea = document.querySelector('textarea[name="message"]');
+  const form = textarea.closest("form");
+
+  textarea.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // evita salto de línea
+      form.requestSubmit(); // envía el form
+    }
+  });
+</script>
+
 {% endblock %}
