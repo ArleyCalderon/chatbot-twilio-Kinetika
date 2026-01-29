@@ -2,7 +2,7 @@ from Core.db import get_conn
 from datetime import datetime, timezone, timedelta
 import json
 # Services/chat_store.py
-from Core.db import pool
+import Core.db as db
 
 def load_session(from_number: str):
     with get_conn() as conn:
@@ -71,10 +71,12 @@ def save_message(from_number: str, direction: str, body: str, twilio_sid: str | 
     Guarda mensajes entrantes y salientes para ver historial en el panel.
     direction: 'in' o 'out'
     """
+
     if not from_number or not body:
         return
+    
 
-    with pool.connection() as conn:
+    with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS messages (
@@ -91,3 +93,4 @@ def save_message(from_number: str, direction: str, body: str, twilio_sid: str | 
                 VALUES (%s, %s, %s, %s);
             """, (from_number, direction, body, twilio_sid))
             conn.commit()
+    

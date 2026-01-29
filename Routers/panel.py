@@ -2,6 +2,9 @@ import os
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from Core.db import pool
+import json
+
 
 router = APIRouter(prefix="/panel", tags=["panel"])
 templates = Jinja2Templates(directory="Templates")
@@ -46,16 +49,42 @@ def logout(request: Request):
     return RedirectResponse(url="/panel/login", status_code=302)
 
 
+import json
+from Core.db import pool
+
 @router.get("", response_class=HTMLResponse)  # /panel
 def panel_home(request: Request):
     redirect = _require_login(request)
     if redirect:
         return redirect
 
-    pending = [
-        {"from_number": "whatsapp:+573001112233", "reason": "Confirmar cita", "updated_at": "2026-01-29 10:05"},
-        {"from_number": "whatsapp:+573004445566", "reason": "Reprogramar cita", "updated_at": "2026-01-29 09:40"},
-    ]
+    rows = []
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT from_number, data, updated_at
+                FROM sessions
+                WHERE step = -9
+                ORDER BY updated_at DESC;
+            """)
+            rows = cur.fetchall()
+
+    pending = []
+    for from_number, data, updated_at in rows:
+        # Asegurar que data sea dict
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except Exception:
+                data = {}
+        elif data is None:
+            data = {}
+
+        pending.append({
+            "from_number": from_number,
+            "reason": data.get("flow", "Atención humana"),
+            "updated_at": updated_at.strftime("%Y-%m-%d %H:%M"),
+        })
 
     return templates.TemplateResponse(
         "panel_list.html",
