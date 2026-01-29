@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% set title = "Login" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-5 col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="mb-3">Iniciar sesión</h4>
+
+        {% if error %}
+          <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/panel/login">
+          <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <input class="form-control" type="text" name="username" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input class="form-control" type="password" name="password" required>
+          </div>
+
+          <button class="btn btn-primary w-100" type="submit">Entrar</button>
+
+          <p class="text-muted small mt-3 mb-0">
+            Tip: en Render configura <code>PANEL_USER</code> y <code>PANEL_PASS</code>.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

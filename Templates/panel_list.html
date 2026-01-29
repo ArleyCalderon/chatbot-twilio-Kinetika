@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set title = "Pendientes" %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h3 class="mb-0">Conversaciones pendientes</h3>
+  <span class="text-muted small">Total: {{ pending|length }}</span>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>Motivo</th>
+          <th>Actualizado</th>
+          <th style="width: 140px;">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in pending %}
+          <tr>
+            <td><code>{{ item.from_number }}</code></td>
+            <td>{{ item.reason }}</td>
+            <td>{{ item.updated_at }}</td>
+            <td>
+              <!-- Por ahora no existe el chat, luego lo conectamos -->
+              <button class="btn btn-sm btn-secondary" disabled>Abrir</button>
+            </td>
+          </tr>
+        {% endfor %}
+
+        {% if pending|length == 0 %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">No hay pendientes 🎉</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="alert alert-info mt-3">
+  Siguiente paso: aquí reemplazamos la lista mock por una consulta a Postgres
+  (<code>sessions.step = -9</code>) y habilitamos “Abrir”.
+</div>
+{% endblock %}

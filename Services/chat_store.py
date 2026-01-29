@@ -1,0 +1,62 @@
+from Core.db import get_conn
+from datetime import datetime, timezone, timedelta
+import json
+def load_session(from_number: str):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT step, data, updated_at
+                FROM sessions
+                WHERE from_number = %s;
+            """, (from_number,))
+            row = cur.fetchone()
+            if not row:
+                return None
+
+            step, data, updated_at = row
+
+            # ⏰ Expiración:
+            # - Flujo normal: 24h
+            # - Handoff (asesor): 72h (3 días)
+            expiry_hours = 24
+            if step == -9:
+                expiry_hours = 72
+
+            if datetime.now(timezone.utc) - updated_at > timedelta(hours=expiry_hours):
+                delete_session(from_number)
+                return None
+
+            return {"step": step, "data": data}
+
+
+
+def save_submission(from_number: str, flow: str, data: dict, message_sid: str | None = None):
+    now = datetime.now(timezone.utc)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO submissions (from_number, flow, message_sid, data, created_at)
+                VALUES (%s, %s, %s, %s::jsonb, %s)
+                ON CONFLICT (message_sid) DO NOTHING;
+            """, (from_number, flow, message_sid, json.dumps(data), now))
+            conn.commit()
+
+
+def save_session(from_number: str, step: int, data: dict):
+    now = datetime.now(timezone.utc)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO sessions (from_number, step, data, updated_at)
+                VALUES (%s, %s, %s::jsonb, %s)
+                ON CONFLICT (from_number)
+                DO UPDATE SET step = EXCLUDED.step, data = EXCLUDED.data, updated_at = EXCLUDED.updated_at;
+            """, (from_number, step, json.dumps(data), now))
+            conn.commit()
+
+
+def delete_session(from_number: str):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM sessions WHERE from_number = %s;", (from_number,))
+            conn.commit()
