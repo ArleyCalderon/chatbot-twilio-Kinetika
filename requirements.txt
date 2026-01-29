@@ -5,3 +5,4 @@ python-multipart
 psycopg[binary]
 psycopg_pool
 jinja2
+itsdangerous>=2.1
