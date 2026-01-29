@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
-
+from fastapi.responses import PlainTextResponse
 from Core.db import init_pool, init_db
 from Routers.webhook import router as webhook_router
 
@@ -44,3 +44,7 @@ def list_routes():
         methods = list(getattr(r, "methods", []) or [])
         out.append({"path": r.path, "methods": methods})
     return out
+
+@app.get("/health", response_class=PlainTextResponse)
+def health():
+    return "ok"

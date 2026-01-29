@@ -1,5 +1,4 @@
 import json
-from fastapi import APIRouter, Request, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from Services.chat_store import load_session, save_session, delete_session, save_submission, save_message
 from Services.chat_flow import QUESTIONS, MENU_TEXT, HANDOFF_TEXT, CANCEL_PROMPT, CANCEL_DATE_PROMPT, validate_and_normalize, next_valid_step, normalize_digits
@@ -11,12 +10,10 @@ from fastapi.responses import Response
 router = APIRouter()
 @router.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
+    form = await request.form()
     from_number = form.get("From")
     message_sid = form.get("MessageSid")
-    incoming_msg = (form.get("Body") or "").strip()
-
-    form = await request.form()
-    
+    incoming_msg = (form.get("Body") or "").strip()    
     save_message(from_number, "in", incoming_msg, message_sid)
 
     resp = MessagingResponse()

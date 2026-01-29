@@ -5,10 +5,6 @@ router = APIRouter()
 DATABASE_URL = os.environ.get("DATABASE_URL")
 pool: ConnectionPool | None = None
 
-@router.get("/health")
-def health():
-    return {"status": "ok"}
-
 def get_conn():
     if pool is None:
         raise RuntimeError("Pool no inicializado aún")
