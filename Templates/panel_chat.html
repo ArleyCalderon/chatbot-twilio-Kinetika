@@ -94,6 +94,19 @@
 
   let lastMessageCount = 0;
 
+  // ✅ NUEVO: evita que el scroll programático dispare "limpiar badge"
+  let suppressScrollClear = false;
+
+  function scrollToBottomProgrammatically() {
+    suppressScrollClear = true;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // deja pasar 1 frame / pequeño delay para que si el navegador dispara scroll event, no limpie
+    setTimeout(() => {
+      suppressScrollClear = false;
+    }, 120);
+  }
+
   async function refreshMessages() {
     try {
       const res = await fetch(`/panel/chat/messages?from=${fromNumber}`, {
@@ -105,27 +118,32 @@
       if (!ct.includes("application/json")) return;
 
       const messages = await res.json();
-      const shouldScroll = isNearBottom(chatBox);
+
+      // 👇 IMPORTANTE: medir si estaba abajo ANTES del render
+      const wasNearBottom = isNearBottom(chatBox);
 
       const newCount = messages.length;
 
-      // ✅ Solo notificar si llegaron mensajes nuevos "in"
-      // ✅ Primera carga: NO notificar (evita falso "Nuevo mensaje")
+      // ✅ Primera carga: NO notificar
       if (lastMessageCount === 0) {
         lastMessageCount = newCount;
       } else if (newCount > lastMessageCount) {
         const newOnes = messages.slice(lastMessageCount);
         const hasInbound = newOnes.some(m => m.direction === "in");
 
+        // ✅ Solo notificar si entra "in"
         if (hasInbound) {
-          badge?.classList.remove("d-none");
+          // ✅ Badge solo tiene sentido si NO estaba abajo (si estaba abajo, ya lo vio)
+          if (!wasNearBottom) {
+            badge?.classList.remove("d-none");
+          }
+
           notifSound.currentTime = 0;
           notifSound.play().catch(() => {});
         }
 
         lastMessageCount = newCount;
       }
-
 
       // Render
       chatBox.innerHTML = "";
@@ -146,10 +164,11 @@
         chatBox.appendChild(wrapper);
       });
 
-      if (shouldScroll) {
-        chatBox.scrollTop = chatBox.scrollHeight;
-        //badge?.classList.add("d-none");
+      // ✅ Mantener scroll inteligente sin apagar badge
+      if (wasNearBottom) {
+        scrollToBottomProgrammatically();
       }
+
     } catch (e) {
       console.error("refreshMessages error", e);
     }
@@ -157,7 +176,7 @@
 
   // abrir abajo
   window.addEventListener("load", () => {
-    chatBox.scrollTop = chatBox.scrollHeight;
+    scrollToBottomProgrammatically();
   });
 
   // ocultar badge al enviar
@@ -172,13 +191,17 @@
       form?.requestSubmit();
     }
   });
+
+  // ✅ Ajuste: solo limpiar badge si el scroll fue "real" del usuario
   chatBox.addEventListener("scroll", () => {
+    if (suppressScrollClear) return;
     if (isNearBottom(chatBox)) {
-    badge?.classList.add("d-none");
+      badge?.classList.add("d-none");
     }
   });
 
   refreshMessages();
   setInterval(refreshMessages, 5000);
 </script>
+
 {% endblock %}
