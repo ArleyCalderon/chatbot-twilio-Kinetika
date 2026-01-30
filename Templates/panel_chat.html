@@ -12,7 +12,6 @@
   <div class="text-muted small">
     <h4 class="mb-0">Chat {{ from_number }}</h4>
     <h4 class="mb-0 d-flex align-items-center gap-2">
-      Chat
       <span id="newMsgBadge" class="badge bg-danger d-none">Nuevo mensaje</span>
     </h4>
 
@@ -83,51 +82,50 @@
 <script>
   const fromNumber = "{{ from_number | urlencode }}";
   const chatBox = document.getElementById("chatBox");
+  const notifSound = document.getElementById("notifSound");
+  const badge = document.getElementById("newMsgBadge");
+
+  const textarea = document.querySelector('textarea[name="message"]');
+  const form = textarea.closest("form");
+
+  let lastMessageCount = 0;
 
   function isNearBottom(el, threshold = 80) {
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
-  let lastMessageCount = 0;
-  const notifSound = document.getElementById("notifSound");
-  const badge = document.getElementById("newMsgBadge");
-  
+
   async function refreshMessages() {
-    
     try {
-      const res = await fetch(`/panel/chat/messages?from=${fromNumber}`);
+      const res = await fetch(`/panel/chat/messages?from=${fromNumber}`, {
+        credentials: "same-origin"
+      });
       if (!res.ok) return;
+
       const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) {
-        const txt = await res.text();
-        console.log("NO JSON, llegó esto:", txt.slice(0, 200));
-        return;
-      }
+      if (!ct.includes("application/json")) return;
 
       const messages = await res.json();
       if (!messages.length) return;
 
       const shouldScroll = isNearBottom(chatBox);
-
-      chatBox.innerHTML = "";
       const newCount = messages.length;
 
-      // Si hay mensajes nuevos
+      //  detectar mensajes nuevos
       if (newCount > lastMessageCount) {
-        const lastMsg = messages[messages.length - 1];
+        const newOnes = messages.slice(lastMessageCount);
+        const hasInbound = newOnes.some(m => m.direction === "in");
 
-        // Sonido SOLO si es mensaje del cliente
-        if (lastMsg.direction === "in") {
+        if (hasInbound) {
           notifSound.currentTime = 0;
           notifSound.play().catch(() => {});
-        }
-        // Mostrar badge
-        if (lastMsg.direction === "in") {
           badge.classList.remove("d-none");
         }
       }
 
       lastMessageCount = newCount;
 
+      // render
+      chatBox.innerHTML = "";
       messages.forEach(m => {
         const wrapper = document.createElement("div");
         wrapper.className =
@@ -144,7 +142,6 @@
             <div style="white-space: pre-wrap;">${m.body}</div>
           </div>
         `;
-
         chatBox.appendChild(wrapper);
       });
 
@@ -157,31 +154,26 @@
     }
   }
 
-  // Al cargar la página, baja al final
+  // abrir siempre abajo
   window.addEventListener("load", () => {
     chatBox.scrollTop = chatBox.scrollHeight;
   });
 
+  // ocultar badge al enviar
   form.addEventListener("submit", () => {
     badge.classList.add("d-none");
   });
 
-  // Primera carga
-  refreshMessages();
-
-  // Refrescar cada 5s (o 10s si quieres)
-  setInterval(refreshMessages, 5000);
-</script>
-<script>
-  const textarea = document.querySelector('textarea[name="message"]');
-  const form = textarea.closest("form");
-
-  textarea.addEventListener("keydown", function (e) {
+  //  Enter para enviar / Shift+Enter para salto
+  textarea.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // evita salto de línea
-      form.requestSubmit(); // envía el form
+      e.preventDefault();
+      form.requestSubmit();
     }
   });
-</script>
 
+  // primera carga + refresco
+  refreshMessages();
+  setInterval(refreshMessages, 5000);
+</script>
 {% endblock %}
