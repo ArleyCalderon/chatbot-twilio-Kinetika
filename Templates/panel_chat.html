@@ -110,7 +110,10 @@
       const newCount = messages.length;
 
       // ✅ Solo notificar si llegaron mensajes nuevos "in"
-      if (newCount > lastMessageCount) {
+      // ✅ Primera carga: NO notificar (evita falso "Nuevo mensaje")
+      if (lastMessageCount === 0) {
+        lastMessageCount = newCount;
+      } else if (newCount > lastMessageCount) {
         const newOnes = messages.slice(lastMessageCount);
         const hasInbound = newOnes.some(m => m.direction === "in");
 
@@ -119,9 +122,10 @@
           notifSound.currentTime = 0;
           notifSound.play().catch(() => {});
         }
+
+        lastMessageCount = newCount;
       }
 
-      lastMessageCount = newCount;
 
       // Render
       chatBox.innerHTML = "";
