@@ -86,13 +86,13 @@
   const badge = document.getElementById("newMsgBadge");
 
   const textarea = document.querySelector('textarea[name="message"]');
-  const form = textarea.closest("form");
-
-  let lastMessageCount = 0;
+  const form = textarea?.closest("form");
 
   function isNearBottom(el, threshold = 80) {
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
+
+  let lastMessageCount = 0;
 
   async function refreshMessages() {
     try {
@@ -105,34 +105,31 @@
       if (!ct.includes("application/json")) return;
 
       const messages = await res.json();
-      if (!messages.length) return;
-
       const shouldScroll = isNearBottom(chatBox);
+
       const newCount = messages.length;
 
-      //  detectar mensajes nuevos
+      // ✅ Solo notificar si llegaron mensajes nuevos "in"
       if (newCount > lastMessageCount) {
         const newOnes = messages.slice(lastMessageCount);
         const hasInbound = newOnes.some(m => m.direction === "in");
 
         if (hasInbound) {
+          badge?.classList.remove("d-none");
           notifSound.currentTime = 0;
           notifSound.play().catch(() => {});
-          badge.classList.remove("d-none");
         }
       }
 
       lastMessageCount = newCount;
 
-      // render
+      // Render
       chatBox.innerHTML = "";
       messages.forEach(m => {
         const wrapper = document.createElement("div");
         wrapper.className =
           "mb-3 d-flex " +
-          (m.direction === "out"
-            ? "justify-content-end"
-            : "justify-content-start");
+          (m.direction === "out" ? "justify-content-end" : "justify-content-start");
 
         wrapper.innerHTML = `
           <div class="p-2 rounded border" style="max-width:75%">
@@ -147,32 +144,31 @@
 
       if (shouldScroll) {
         chatBox.scrollTop = chatBox.scrollHeight;
-        badge.classList.add("d-none");
+        badge?.classList.add("d-none");
       }
     } catch (e) {
       console.error("refreshMessages error", e);
     }
   }
 
-  // abrir siempre abajo
+  // abrir abajo
   window.addEventListener("load", () => {
     chatBox.scrollTop = chatBox.scrollHeight;
   });
 
   // ocultar badge al enviar
-  form.addEventListener("submit", () => {
-    badge.classList.add("d-none");
+  form?.addEventListener("submit", () => {
+    badge?.classList.add("d-none");
   });
 
-  //  Enter para enviar / Shift+Enter para salto
-  textarea.addEventListener("keydown", e => {
+  // Enter envía / Shift+Enter hace salto
+  textarea?.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      form.requestSubmit();
+      form?.requestSubmit();
     }
   });
 
-  // primera carga + refresco
   refreshMessages();
   setInterval(refreshMessages, 5000);
 </script>
