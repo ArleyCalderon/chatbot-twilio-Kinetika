@@ -148,7 +148,7 @@
 
       if (shouldScroll) {
         chatBox.scrollTop = chatBox.scrollHeight;
-        badge?.classList.add("d-none");
+        //badge?.classList.add("d-none");
       }
     } catch (e) {
       console.error("refreshMessages error", e);
@@ -170,6 +170,11 @@
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       form?.requestSubmit();
+    }
+  });
+  chatBox.addEventListener("scroll", () => {
+    if (isNearBottom(chatBox)) {
+    badge?.classList.add("d-none");
     }
   });
 
