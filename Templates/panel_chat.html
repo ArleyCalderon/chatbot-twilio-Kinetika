@@ -11,7 +11,12 @@
   </div>-->
   <div class="text-muted small">
     <h4 class="mb-0">Chat {{ from_number }}</h4>
-    <div><code>{{ from_number }}</code></div>
+    <h4 class="mb-0 d-flex align-items-center gap-2">
+      Chat
+      <span id="newMsgBadge" class="badge bg-danger d-none">Nuevo mensaje</span>
+    </h4>
+
+    <!--<div><code>{{ from_number }}</code></div>-->
     <div>Paciente: <strong>{{ nombre }}</strong></div>
     <div>Documento:  {{ cedula }}</div>
     <div>Tipo Cita:  {{ tipo_cita }}</div>
@@ -84,6 +89,7 @@
   }
   let lastMessageCount = 0;
   const notifSound = document.getElementById("notifSound");
+  const badge = document.getElementById("newMsgBadge");
   
   async function refreshMessages() {
     
@@ -114,6 +120,10 @@
           notifSound.currentTime = 0;
           notifSound.play().catch(() => {});
         }
+        // Mostrar badge
+        if (lastMsg.direction === "in") {
+          badge.classList.remove("d-none");
+        }
       }
 
       lastMessageCount = newCount;
@@ -140,6 +150,7 @@
 
       if (shouldScroll) {
         chatBox.scrollTop = chatBox.scrollHeight;
+        badge.classList.add("d-none");
       }
     } catch (e) {
       console.error("refreshMessages error", e);
@@ -149,6 +160,10 @@
   // Al cargar la página, baja al final
   window.addEventListener("load", () => {
     chatBox.scrollTop = chatBox.scrollHeight;
+  });
+
+  form.addEventListener("submit", () => {
+    badge.classList.add("d-none");
   });
 
   // Primera carga
