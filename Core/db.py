@@ -51,5 +51,14 @@ def init_db():
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS clients (
+                id BIGSERIAL PRIMARY KEY,
+                identification TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+
+            """)
 
             conn.commit()

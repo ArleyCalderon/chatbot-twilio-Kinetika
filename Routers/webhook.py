@@ -1,10 +1,11 @@
 import json
 from twilio.twiml.messaging_response import MessagingResponse
-from Services.chat_store import load_session, save_session, delete_session, save_submission, save_message
+from Services.chat_store import load_session, save_session, delete_session, save_submission, save_message,upsert_client
 from Services.chat_flow import QUESTIONS, MENU_TEXT, HANDOFF_TEXT, CANCEL_PROMPT, CANCEL_DATE_PROMPT, validate_and_normalize, next_valid_step, normalize_digits
 from datetime import datetime, timezone, date, timedelta
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
+from Services.chat_store import get_client_by_identification
 
 
 router = APIRouter()
@@ -43,7 +44,7 @@ async def whatsapp_webhook(request: Request):
         save_message(from_number, "in", incoming_msg, message_sid)
         m = cmd  # ya está normalizado
 
-        if m in {"menu", "menú", "inicio", "empezar", "volver", "hola"}:
+        if m in {"menu", "menú", "inicio", "empezar", "volver"}:
             save_session(from_number, step=-1, data={})
             resp.message(MENU_TEXT)
             return Response(content=str(resp), media_type="application/xml")
@@ -135,14 +136,28 @@ async def whatsapp_webhook(request: Request):
             return Response(content=str(resp), media_type="application/xml")
 
         data[q["key"]] = normalized
+        if q["type"] == "doc_number":
+            client = get_client_by_identification(normalized)
+            if client:
+                data["cliente_existente"] = True
         step += 1
         step = next_valid_step(step, data)
         save_session(from_number, step=step, data=data)
+
+    
 
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
         save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
+        identification = data.get("cedula")
+        full_name = (
+        f"{data.get('nombres_raw','').strip()} {data.get('apellidos_raw','').strip()}".strip()
+        or data.get("nombre_completo","").strip()
+        )
+
+        if identification and full_name:
+            upsert_client(identification, full_name)
         resp.message(HANDOFF_TEXT)
         save_session(from_number, step=-9, data=data)
 

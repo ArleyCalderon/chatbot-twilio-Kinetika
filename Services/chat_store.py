@@ -101,3 +101,39 @@ def delete_messages(from_number: str):
         with conn.cursor() as cur:
             cur.execute("DELETE FROM messages WHERE from_number = %s;", (from_number,))
             conn.commit()
+
+
+def get_client_by_identification(identification: str):
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS clients (
+                    id BIGSERIAL PRIMARY KEY,
+                    identification TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+            """)
+            cur.execute("""
+                SELECT id, identification, name
+                FROM clients
+                WHERE identification = %s
+                LIMIT 1;
+            """, (identification,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            return {"id": row[0], "identification": row[1], "name": row[2]}
+        
+def upsert_client(identification: str, name: str):
+    if not identification or not name:
+        return
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO clients (identification, name)
+                VALUES (%s, %s)
+                ON CONFLICT (identification)
+                DO UPDATE SET name = EXCLUDED.name;
+            """, (identification, name))
+            conn.commit()

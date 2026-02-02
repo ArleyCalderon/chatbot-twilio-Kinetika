@@ -3,28 +3,28 @@ import re
 #region Preguntas
 QUESTIONS = [
     # Identificación
-    {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names"},
-    {"key": "apellidos_raw", "text": "Escribe tus *APELLIDOS* (uno o dos).\nEj: Pérez Gómez", "type": "surnames"},
     {"key": "tipo_id", "text": "Tipo de documento:\n1) Cédula de ciudadanía\n2) Cédula de extranjería\n3) Pasaporte\n4) Registro civil\n5) Tarjeta de identidad\n6) Adulto sin identificación\n7) Menor sin identificación\n8) Número único de identificación\n9) Carnet Diplomático\n10) Permiso especial de permanencia\n11) Certificado nacido vivo\n12) Permiso por protección temporal\n13) Salva conducto\n14) Documento extranjero\n\nResponde con el número", "type": "doc_type"},
     {"key": "cedula", "text": "Escribe tu número de documento (solo números):", "type": "doc_number"},
-    {"key": "genero", "text": "Género:\n1) Masculino\n2) Femenino", "type": "gender"},
-    {"key": "fecha_nacimiento", "text": "Fecha de nacimiento (DD/MM/AAAA).\nEj: 11/05/1997", "type": "dob"},
+    {"key": "nombres_raw", "text": "Escribe tus *NOMBRES* (uno o dos).\nEj: Juan David", "type": "names","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "apellidos_raw", "text": "Escribe tus *APELLIDOS* (uno o dos).\nEj: Pérez Gómez", "type": "surnames","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "genero", "text": "Género:\n1) Masculino\n2) Femenino", "type": "gender","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "fecha_nacimiento", "text": "Fecha de nacimiento (DD/MM/AAAA).\nEj: 11/05/1997", "type": "dob","condition": lambda data: not data.get("cliente_existente")},
 
     # Contacto
-    {"key": "celular", "text": "Número de celular (solo números).\nEj: 3001234567", "type": "phone"},
-    {"key": "email", "text": "Correo electrónico:\nEj: nombre@correo.com", "type": "email"},
+    {"key": "celular", "text": "Número de celular (solo números).\nEj: 3001234567", "type": "phone","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "email", "text": "Correo electrónico:\nEj: nombre@correo.com", "type": "email","condition": lambda data: not data.get("cliente_existente")},
 
     # Ubicación
-    {"key": "pais_origen", "text": "País de origen:", "type": "text_min3"},
-    {"key": "direccion", "text": "Dirección completa:\nEj: Cra 80 # 45-20, Medellín", "type": "text_min6"},
-    {"key": "departamento", "text": "Departamento:", "type": "text_min3"},
-    {"key": "municipio", "text": "Municipio:", "type": "text_min3"},
-    {"key": "zona", "text": "Zona:\n1) Urbana\n2) Rural", "type": "zone"},
+    {"key": "pais_origen", "text": "País de origen:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "direccion", "text": "Dirección completa:\nEj: Cra 80 # 45-20, Medellín", "type": "text_min6","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "departamento", "text": "Departamento:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "municipio", "text": "Municipio:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "zona", "text": "Zona:\n1) Urbana\n2) Rural", "type": "zone","condition": lambda data: not data.get("cliente_existente")},
 
     # Salud
-    {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo\n12) No sabe", "type": "regimen"},
-    {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "tiposeguro"},
-    {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "tipoafiliacion"},
+    {"key": "regimen", "text": "Régimen:\n1) Contributivo cotizante\n2) Subsidiado\n3) Contributivo beneficiario\n4) particular\n5) No afiliado\n6) Tomador/Amparado ARL\n7) Tomador/Amparado SOAT\n8) Tomador/Amparado Planes voluntarios de salud\n9) Especial o Excepción cotizante\n10) Especial o Excepción beneficiario\n11) Personas privadas de la libertad a cargo del fondo\n12) No sabe", "type": "regimen","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "eps", "text": "¿Cuál es tu EPS?\n1) Arl\n2) Eps\n3) Particular\n4) Poliza\n5) Soat", "type": "tiposeguro","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "tipoafiliacion","condition": lambda data: not data.get("cliente_existente")},
 
     # Condicional
     {"key": "discapacidad", "text": "¿Tienes alguna discapacidad?\n1) Sí\n2) No", "type": "yesno"},
@@ -32,8 +32,8 @@ QUESTIONS = [
      "condition": lambda data: data.get("discapacidad") == "SI"},
 
     # Emergencia
-    {"key": "nombre_acompanante", "text": "Nombre de contacto de emergencia", "type": "optional_name"},
-    {"key": "telefono_emergencia", "text": "Teléfono de emergencia (solo números):", "type": "phone"},
+    {"key": "nombre_acompanante", "text": "Nombre de contacto de emergencia", "type": "optional_name","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "telefono_emergencia", "text": "Teléfono de emergencia (solo números):", "type": "phone","condition": lambda data: not data.get("cliente_existente")},
 
     # Cita Component
     {"key": "tipo_cita", "text": "¿Tipo de cita?\n1) Valoración primera vez\n2) Control", "type": "tipocita"},
