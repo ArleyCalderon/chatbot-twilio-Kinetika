@@ -34,14 +34,12 @@
             <td>{{ item.reason }}</td>
             <td>{{ item.updated_at }}</td>
             <td>
-              {% if item.has_new|default(false) %}
-                <span class="badge bg-danger me-2 conv-new {% if not item.has_new|default(false) %}d-none{% endif %}">
-                  Nuevo
-                </span>
+            <span class="badge bg-danger me-2 conv-new {% if not item.has_new|default(false) %}d-none{% endif %}">
+              Nuevo
+            </span>
+            <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
+          </td>
 
-              {% endif %}
-              <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
-            </td>
           </tr>
         {% endfor %}
       {% endif %}
