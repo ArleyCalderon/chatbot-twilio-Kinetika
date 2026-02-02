@@ -13,6 +13,7 @@
       <thead>
         <tr>
           <th>From</th>
+          <tr data-conv="{{ item.from_number }}"></tr>
           <th>Documento</th>
           <th>Nombre</th>
           <th>Motivo</th>
@@ -31,7 +32,9 @@
             
             
             <td>
-              
+                {% if item.has_new %}
+                  <span class="badge bg-danger me-2">Nuevo</span>
+                {% endif %}
               <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
 
 
@@ -52,4 +55,34 @@
 <div class="alert alert-info mt-3">
   Bienvenido al panel de administración. Aquí puedes gestionar las conversaciones con los clientes.
 </div>
+<script>
+  const POLL_MS = 4000;
+
+  function setRowNewBadge(convKey, isNew) {
+    const row = document.querySelector(`tr[data-conv="${convKey}"]`);
+    if (!row) return;
+    const badge = row.querySelector(".conv-new");
+    if (!badge) return;
+    badge.classList.toggle("d-none", !isNew);
+  }
+
+  async function pollPending() {
+    try {
+      const res = await fetch("/panel/pending/poll", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const map = data.new || {};
+      for (const [k, v] of Object.entries(map)) {
+        setRowNewBadge(k, v);
+      }
+    } catch (e) {
+      // silencioso
+    }
+  }
+
+  pollPending();
+  setInterval(pollPending, POLL_MS);
+</script>
+
 {% endblock %}

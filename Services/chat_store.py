@@ -102,6 +102,14 @@ def delete_messages(from_number: str):
             cur.execute("DELETE FROM messages WHERE from_number = %s;", (from_number,))
             conn.commit()
 
+def delete_LastMessagesChat(from_number: str):
+    if db.pool is None:
+        return
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM conversation_reads WHERE from_number = %s;", (from_number,))
+            conn.commit()
+
 
 def get_client_by_identification(identification: str):
     with get_conn() as conn:

@@ -60,5 +60,16 @@ def init_db():
                 );
 
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS conversation_reads (
+                conversation_key TEXT NOT NULL,
+                advisor_id TEXT NOT NULL,
+                last_read_message_id BIGINT NOT NULL DEFAULT 0,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (conversation_key, advisor_id)
+                );
+            
+            """)
+
 
             conn.commit()

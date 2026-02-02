@@ -1,18 +1,23 @@
 import os
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from Services.chat_store import delete_session, save_session  # según lo que uses
 from urllib.parse import quote
 from fastapi import APIRouter, Request, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 import os
 from twilio.rest import Client
 from Core.db import pool
-from Services.chat_store import save_message, delete_messages, delete_session
+from Services.chat_store import save_message, delete_messages, delete_session,delete_LastMessagesChat
 import json
 from fastapi.responses import JSONResponse
 import Core.db as db
 from urllib.parse import unquote
+from pydantic import BaseModel
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+from urllib.parse import unquote
+import Core.db as db
+from fastapi import Request
 from zoneinfo import ZoneInfo
 local_tz = ZoneInfo("America/Bogota")
 
@@ -67,14 +72,16 @@ import json
 
 @router.get("", response_class=HTMLResponse)  # /panel
 def panel_home(request: Request):
-    
+
     redirect = _require_login(request)
     if redirect:
         return redirect
 
-    rows = []
+    advisor_id = request.session.get("user") or "default"
+
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
+
             cur.execute("""
                 SELECT from_number, data, updated_at
                 FROM sessions
@@ -83,37 +90,52 @@ def panel_home(request: Request):
             """)
             rows = cur.fetchall()
 
-    pending = []
-    for from_number, data, updated_at in rows:
-        # Asegurar que data sea dict
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except Exception:
-                data = {}
-        elif data is None:
-            data = {}
+            pending = []
+            for from_number, data, updated_at in rows:
 
-        nombre = _display_name(data)
-        cedula = _display_cedula(data)
-        local_dt = updated_at.astimezone(local_tz)
+                if isinstance(data, str):
+                    try:
+                        data = json.loads(data)
+                    except Exception:
+                        data = {}
+                elif data is None:
+                    data = {}
 
-        pending.append({
-            "from_number": from_number,
-            "nombre": nombre,
-            "cedula": cedula,
-            "reason": data.get("flow", "Atención humana"),
-            "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
-            "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
-        })
+                nombre = _display_name(data)
+                cedula = _display_cedula(data)
+                local_dt = updated_at.astimezone(local_tz)
 
-        
+                cur.execute("""
+                    SELECT COALESCE(MAX(id), 0)
+                    FROM messages
+                    WHERE from_number = %s AND direction = 'in';
+                """, (from_number,))
+                latest_in_id = cur.fetchone()[0]
+
+                cur.execute("""
+                    SELECT last_read_message_id
+                    FROM conversation_reads
+                    WHERE conversation_key = %s AND advisor_id = %s;
+                """, (from_number, advisor_id))
+                r = cur.fetchone()
+                last_read = r[0] if r else 0
+
+                has_new = latest_in_id > last_read
+
+                pending.append({
+                    "from_number": from_number,
+                    "nombre": nombre,
+                    "cedula": cedula,
+                    "reason": data.get("flow", "Atención humana"),
+                    "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
+                    "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
+                    "has_new": has_new,
+                })
 
     return templates.TemplateResponse(
         "panel_list.html",
         {"request": request, "pending": pending, "user": request.session.get("user")},
     )
-
 
 def _display_name(data: dict) -> str:
     parts = [
@@ -131,24 +153,6 @@ def _display_tipo_servicio(data: dict) -> str:
     return data.get("tipo_servicio")
 def _display_tipo_cita(data: dict) -> str:
     return data.get("tipo_cita") 
-
-
-@router.post("/chat/{from_number}/close")
-def close_chat(request: Request, from_number: str):
-    redirect = _require_login(request)
-    if redirect:
-        return redirect
-
-    # 1) borrar historial
-    delete_messages(from_number)
-
-    # 2) sacar del handoff: puedes borrar sesión o devolverla a menú
-    # Opción A: volver a menú
-    #save_session(from_number, step=-1, data={})
-    # Opción B: borrar sesión
-    delete_session(from_number)
-
-    return RedirectResponse(url="/panel", status_code=302)
 
 @router.get("/chat", response_class=HTMLResponse)
 def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
@@ -168,28 +172,35 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
 
     data = row[0] if row else {}
     if isinstance(data, str):
-        data = json.loads(data)
+        try:
+            data = json.loads(data)
+        except Exception:
+            data = {}
 
     nombre = _display_name(data)
     cedula = _display_cedula(data)
     tipo_servicio = _display_tipo_servicio(data)
     tipo_cita = _display_tipo_cita(data)
 
-    # traer mensajes si los usas
+    # traer mensajes
     messages = []
+    last_message_id = 0
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT direction, body, created_at
+                SELECT id, direction, body, created_at
                 FROM messages
                 WHERE from_number = %s
-                ORDER BY created_at ASC;
+                ORDER BY created_at ASC, id ASC;
             """, (from_number,))
-            for d, b, c in cur.fetchall():
+            for mid, d, b, c in cur.fetchall():
+                last_message_id = max(last_message_id, mid)
+                local_dt = c.astimezone(local_tz) if getattr(c, "tzinfo", None) else c
                 messages.append({
+                    "id": mid,
                     "direction": d,
                     "body": b,
-                    "created_at": c.strftime("%d/%m/%Y %I:%M %p"),
+                    "created_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
                 })
 
     return templates.TemplateResponse(
@@ -203,9 +214,9 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "tipo_servicio": tipo_servicio,
             "tipo_cita": tipo_cita,
             "messages": messages,
+            "last_message_id": last_message_id,
         },
     )
-
 
 @router.post("/chat/send")
 def chat_send(
@@ -291,18 +302,21 @@ def chat_close(request: Request, from_number: str = Form(...)):
         delete_session(from_number)
     except Exception as e:
         print(f"[WARN] delete_session failed: {e}")
+    
+    # resetea conversación (para que el bot vuelva a menú)
+    try:
+        delete_LastMessagesChat(from_number)
+    except Exception as e:
+        print(f"[WARN] delete_LastMessagesChat failed: {e}")
 
+    
     return RedirectResponse(url="/panel", status_code=302)
 
 
-from fastapi import HTTPException
-from fastapi.responses import JSONResponse
-from urllib.parse import unquote
-import Core.db as db
+
 
 @router.get("/chat/messages")
 def chat_messages(request: Request, from_number: str = Query(..., alias="from")):
-    # En APIs: NO redirect, 401
     if not request.session.get("user"):
         raise HTTPException(status_code=401, detail="Not logged in")
 
@@ -312,19 +326,49 @@ def chat_messages(request: Request, from_number: str = Query(..., alias="from"))
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT direction, body, created_at
+                SELECT id, direction, body, created_at
                 FROM messages
                 WHERE from_number = %s
-                ORDER BY created_at ASC
+                ORDER BY created_at ASC, id ASC
                 LIMIT 500;
             """, (from_number,))
             rows = cur.fetchall()
 
-    for direction, body, created_at in rows:
+    for mid, direction, body, created_at in rows:
+        local_dt = created_at.astimezone(local_tz) if getattr(created_at, "tzinfo", None) else created_at
         messages.append({
+            "id": mid,
             "direction": direction,
             "body": body,
-            "created_at": created_at.astimezone(local_tz).strftime("%Y-%m-%d %H:%M"),
+            "created_at": local_dt.strftime("%Y-%m-%d %H:%M"),
         })
 
     return JSONResponse(messages)
+
+
+
+class MarkReadIn(BaseModel):
+    conversation_key: str
+    last_read_message_id: int
+
+@router.post("/chat/mark_read")
+def panel_mark_read(request: Request, payload: MarkReadIn):
+    redirect = _require_login(request)
+    if redirect:
+        return {"ok": False}
+
+    advisor_id = request.session.get("user") or "default"
+
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO conversation_reads (conversation_key, advisor_id, last_read_message_id, updated_at)
+                VALUES (%s, %s, %s, NOW())
+                ON CONFLICT (conversation_key, advisor_id)
+                DO UPDATE SET
+                    last_read_message_id = GREATEST(conversation_reads.last_read_message_id, EXCLUDED.last_read_message_id),
+                    updated_at = NOW();
+            """, (payload.conversation_key, advisor_id, payload.last_read_message_id))
+            conn.commit()
+
+    return {"ok": True}
