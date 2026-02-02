@@ -107,7 +107,7 @@ def delete_LastMessagesChat(from_number: str):
         return
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM conversation_reads WHERE from_number = %s;", (from_number,))
+            cur.execute("DELETE FROM conversation_reads WHERE conversation_key = %s;", (from_number,))
             conn.commit()
 
 
