@@ -372,3 +372,47 @@ def panel_mark_read(request: Request, payload: MarkReadIn):
             conn.commit()
 
     return {"ok": True}
+
+
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+import Core.db as db
+
+@router.get("/pending/poll")
+def panel_pending_poll(request: Request):
+    if not request.session.get("user"):
+        raise HTTPException(status_code=401, detail="Not logged in")
+
+    advisor_id = request.session.get("user") or "default"
+
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT from_number
+                FROM sessions
+                WHERE step = -9;
+            """)
+            convs = [r[0] for r in cur.fetchall()]
+
+            new_map = {}
+
+            for from_number in convs:
+                cur.execute("""
+                    SELECT COALESCE(MAX(id), 0)
+                    FROM messages
+                    WHERE from_number = %s AND direction = 'in';
+                """, (from_number,))
+                latest_in_id = cur.fetchone()[0]
+
+                cur.execute("""
+                    SELECT last_read_message_id
+                    FROM conversation_reads
+                    WHERE conversation_key = %s AND advisor_id = %s;
+                """, (from_number, advisor_id))
+                r = cur.fetchone()
+                last_read = r[0] if r else 0
+
+                new_map[from_number] = (latest_in_id > last_read)
+
+    total_new = sum(1 for v in new_map.values() if v)
+    return JSONResponse({"new": new_map, "total_new": total_new})
