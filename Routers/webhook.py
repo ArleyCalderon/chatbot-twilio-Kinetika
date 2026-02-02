@@ -140,7 +140,7 @@ async def whatsapp_webhook(request: Request):
             client = get_client_by_identification(normalized)
             if client:
                 data["cliente_existente"] = True
-                data["nombres_raw"] = client["name"] 
+                data["primer_nombre"] = client["name"] 
         step += 1
         step = next_valid_step(step, data)
         save_session(from_number, step=step, data=data)
