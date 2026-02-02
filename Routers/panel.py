@@ -96,13 +96,14 @@ def panel_home(request: Request):
 
         nombre = _display_name(data)
         cedula = _display_cedula(data)
+        local_dt = updated_at.astimezone(local_tz)
 
         pending.append({
             "from_number": from_number,
             "nombre": nombre,
             "cedula": cedula,
             "reason": data.get("flow", "Atención humana"),
-            "updated_at": updated_at.strftime("%Y-%m-%d %H:%M"),
+            "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
             "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
         })
 
@@ -188,7 +189,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
                 messages.append({
                     "direction": d,
                     "body": b,
-                    "created_at": c.strftime("%Y-%m-%d %H:%M"),
+                    "created_at": c.strftime("%d/%m/%Y %I:%M %p"),
                 })
 
     return templates.TemplateResponse(
