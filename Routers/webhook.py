@@ -140,6 +140,7 @@ async def whatsapp_webhook(request: Request):
             client = get_client_by_identification(normalized)
             if client:
                 data["cliente_existente"] = True
+                data["nombres_raw"] = client["name"] 
         step += 1
         step = next_valid_step(step, data)
         save_session(from_number, step=step, data=data)
@@ -151,10 +152,7 @@ async def whatsapp_webhook(request: Request):
     else:
         save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
         identification = data.get("cedula")
-        full_name = (
-        f"{data.get('nombres_raw','').strip()} {data.get('apellidos_raw','').strip()}".strip()
-        or data.get("nombre_completo","").strip()
-        )
+        full_name = (data.get("nombre_completo") or data.get("nombres_raw") or "").strip()
 
         if identification and full_name:
             upsert_client(identification, full_name)
