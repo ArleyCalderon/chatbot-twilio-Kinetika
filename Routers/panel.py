@@ -149,6 +149,8 @@ def _display_name(data: dict) -> str:
 
 def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
+def _display_toNumber(data: dict) -> str:
+    return data.get("to_number") or data.get("to_number")
 def _display_tipo_servicio(data: dict) -> str:
     return data.get("tipo_servicio")
 def _display_tipo_cita(data: dict) -> str:
@@ -181,19 +183,19 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     cedula = _display_cedula(data)
     tipo_servicio = _display_tipo_servicio(data)
     tipo_cita = _display_tipo_cita(data)
-
+    to_number = _display_toNumber(data)
     # traer mensajes
     messages = []
     last_message_id = 0
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, direction, body, created_at
+                SELECT id, direction, body, created_at, to_number
                 FROM messages
                 WHERE from_number = %s
                 ORDER BY created_at ASC, id ASC;
             """, (from_number,))
-            for mid, d, b, c in cur.fetchall():
+            for mid, d, b, c,to_number in cur.fetchall():
                 last_message_id = max(last_message_id, mid)
                 local_dt = c.astimezone(local_tz) if getattr(c, "tzinfo", None) else c
                 messages.append({
@@ -201,6 +203,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
                     "direction": d,
                     "body": b,
                     "created_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
+                    "to_number": to_number,
                 })
 
     return templates.TemplateResponse(
@@ -215,6 +218,9 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "tipo_cita": tipo_cita,
             "messages": messages,
             "last_message_id": last_message_id,
+            "to_number": to_number,
+
+            
         },
     )
 
@@ -237,7 +243,22 @@ def chat_send(
     # Twilio config
     account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-    wa_from = os.environ.get("TWILIO_WHATSAPP_FROM")  # ej: "whatsapp:+14155238886" o tu número WA
+    wa_from_default  = os.environ.get("TWILIO_WHATSAPP_FROM")  # ej: "whatsapp:+14155238886" o tu número WA
+    wa_from = wa_from_default
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT to_number
+                FROM messages
+                WHERE from_number = %s
+                AND direction = 'in'
+                AND to_number IS NOT NULL
+                ORDER BY id DESC
+                LIMIT 1;
+            """, (from_number,))
+            r = cur.fetchone()
+            if r and r[0]:
+                wa_from = r[0]
 
     if not account_sid or not auth_token or not wa_from:
         # Si no están las env vars, no tumbes el panel: muestra error simple
@@ -257,11 +278,7 @@ def chat_send(
 
     tw_sid = None
     try:
-        sent = client.messages.create(
-            from_=wa_from,
-            to=from_number,
-            body=message,
-        )
+        sent = client.messages.create(from_=wa_from, to=from_number, body=message)
         tw_sid = sent.sid
     except Exception as e:
         return templates.TemplateResponse(
@@ -278,7 +295,7 @@ def chat_send(
 
     # Guardar como salida en DB
     try:
-        save_message(from_number, "out", message, tw_sid)
+        save_message(from_number, "out", message, tw_sid,to_number=wa_from)
     except Exception as e:
         print(f"[WARN] save_message(out) failed: {e}")
     encoded = quote(from_number, safe="")

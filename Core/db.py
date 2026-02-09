@@ -48,7 +48,8 @@ def init_db():
                     direction TEXT NOT NULL CHECK (direction IN ('in','out')),
                     body TEXT NOT NULL,
                     twilio_sid TEXT,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    to_number TEXT
                 );
             """)
             cur.execute("""

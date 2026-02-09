@@ -66,7 +66,7 @@ def delete_session(from_number: str):
 
 
 
-def save_message(from_number: str, direction: str, body: str, twilio_sid: str | None = None):
+def save_message(from_number: str, direction: str, body: str, twilio_sid: str | None = None, to_number: str | None = None):
     """
     Guarda mensajes entrantes y salientes para ver historial en el panel.
     direction: 'in' o 'out'
@@ -85,13 +85,15 @@ def save_message(from_number: str, direction: str, body: str, twilio_sid: str | 
                     direction TEXT NOT NULL CHECK (direction IN ('in','out')),
                     body TEXT NOT NULL,
                     twilio_sid TEXT,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    to_number TEXT
+                
                 );
             """)
             cur.execute("""
-                INSERT INTO messages (from_number, direction, body, twilio_sid)
+                INSERT INTO messages (from_number, direction, body, twilio_sid, to_number)
                 VALUES (%s, %s, %s, %s);
-            """, (from_number, direction, body, twilio_sid))
+            """, (from_number, direction, body, twilio_sid, to_number))
             conn.commit()
     
 def delete_messages(from_number: str):
