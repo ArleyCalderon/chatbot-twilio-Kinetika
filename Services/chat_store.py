@@ -92,7 +92,7 @@ def save_message(from_number: str, direction: str, body: str, twilio_sid: str | 
             """)
             cur.execute("""
                 INSERT INTO messages (from_number, direction, body, twilio_sid, to_number)
-                VALUES (%s, %s, %s, %s);
+                VALUES (%s, %s, %s, %s, %s);
             """, (from_number, direction, body, twilio_sid, to_number))
             conn.commit()
     

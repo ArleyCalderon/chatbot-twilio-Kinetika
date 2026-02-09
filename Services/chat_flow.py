@@ -277,7 +277,8 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
 
 # region Flow menu
 MENU_TEXT = (
-    "Hola 👋 ¿Qué deseas hacer?\n"
+    
+    "Hola👋 te damos la bienvenida. Gracias por ponerte en contacto con nosotros. Antes de iniciar, es necesario que aceptes los términos y condiciones de WhatsApp.   ¿Qué deseas hacer?\n"
     "1) Agendar cita\n"
     "2) Cancelar cita\n\n"
     "Responde con 1 o 2"
