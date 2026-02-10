@@ -33,9 +33,10 @@ def _is_logged_in(request: Request) -> bool:
 
 
 def _require_login(request: Request):
-    if not  (request):
+    if not request.session.get("user"):
         return RedirectResponse(url="/panel/login", status_code=302)
     return None
+
 
 
 @router.get("/login", response_class=HTMLResponse)
