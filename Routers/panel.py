@@ -189,6 +189,10 @@ def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
 def _display_toNumber(data: dict) -> str:
     return data.get("to_number") or data.get("to_number")
+
+def _display_Cirugia(data):
+    return data.get("cual_cirugia")  # devuelve None si no existe
+
 def _display_tipo_servicio(data: dict) -> str:
     return data.get("tipo_servicio")
 def _display_tipo_cita(data: dict) -> str:
@@ -222,6 +226,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     tipo_servicio = _display_tipo_servicio(data)
     tipo_cita = _display_tipo_cita(data)
     to_number = _display_toNumber(data)
+    cirugia= _display_Cirugia(data)
     # traer mensajes
     messages = []
     last_message_id = 0
@@ -242,6 +247,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
                     "body": b,
                     "created_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
                     "to_number": to_number,
+                   
                 })
 
     return templates.TemplateResponse(
@@ -257,6 +263,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "messages": messages,
             "last_message_id": last_message_id,
             "to_number": to_number,
+            "cual_cirugia": cirugia,
 
             
         },

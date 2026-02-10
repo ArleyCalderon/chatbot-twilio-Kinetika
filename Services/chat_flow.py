@@ -27,7 +27,7 @@ QUESTIONS = [
     {"key": "afiliacion", "text": "¿Cuál es tu Afiliación?\n1) Cotizante\n2) Beneficiario", "type": "tipoafiliacion","condition": lambda data: not data.get("cliente_existente")},
 
     # Condicional
-    {"key": "discapacidad", "text": "¿Tienes alguna discapacidad?\n1) Sí\n2) No", "type": "yesno"},
+    {"key": "discapacidad", "text": "¿Tienes alguna discapacidad?\n1) Sí\n2) No", "type": "yesno","condition": lambda data: not data.get("cliente_existente")},
     {"key": "cual_discapacidad", "text": "¿Cuál discapacidad tienes?", "type": "text_min3",
      "condition": lambda data: data.get("discapacidad") == "SI"},
 
@@ -40,6 +40,8 @@ QUESTIONS = [
     {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"},
 
     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
+    {"key": "cual_cirugia", "text": "¿Cuál cirugia reciente tienes?", "type": "text_min3",
+     "condition": lambda data: data.get("cirugia") == "SI"},
 ]
 #endregion
 

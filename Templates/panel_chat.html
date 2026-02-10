@@ -16,11 +16,27 @@
     </h4>
 
     <!--<div><code>{{ from_number }}</code></div>-->
-    <div>Paciente: <strong>{{ nombre }}</strong></div>
-    <div>Documento:  {{ cedula }}</div>
-    <div>Tipo Cita:  {{ tipo_cita }}</div>
-    <div>Tipo Servicio:  {{ tipo_servicio }}</div>
-    <div>Línea:  {{ to_number }}</div>
+    <table>
+      <tr>
+        <td><strong>Paciente:</strong></td>
+        <td>{{ nombre }}</td>
+        <td><strong>Documento:</strong></td>
+        <td>{{ cedula }}</td>
+      </tr>
+      <tr>
+        <td><strong>Tipo cita:</strong></td>
+        <td>{{ tipo_cita }}</td>
+        <td><strong>Tipo servicio:</strong></td>
+        <td>{{ tipo_servicio }}</td>
+      </tr>
+      <tr>
+        <td><strong>Cirugía reciente?</strong></td>
+        <td>{{ cirugia or "-" }}</td>
+        <td><strong>Línea:</strong></td>
+        <td>{{ to_number }}</td>
+      </tr>
+    </table>
+
   </div>
 
   <div class="d-flex gap-2">
