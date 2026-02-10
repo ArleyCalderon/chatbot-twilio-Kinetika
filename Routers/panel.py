@@ -470,4 +470,11 @@ def panel_pending_poll(request: Request):
                 new_map[from_number] = (latest_in_id > last_read)
 
     total_new = sum(1 for v in new_map.values() if v)
-    return JSONResponse({"new": new_map, "total_new": total_new})
+    total_pending = len(convs)
+
+    return JSONResponse({
+        "new": new_map,
+        "total_new": total_new,
+        "total_pending": total_pending
+    })
+
