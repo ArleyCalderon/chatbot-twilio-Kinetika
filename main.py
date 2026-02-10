@@ -6,6 +6,7 @@ from Core.db import init_pool, init_db
 from Routers.webhook import router as webhook_router
 from fastapi.staticfiles import StaticFiles
 from Routers.panel import router as panel_router
+from Routers.notify import router as notify_router
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -25,6 +26,7 @@ def on_startup():
 
 app.include_router(webhook_router)
 app.include_router(panel_router)
+app.include_router(notify_router)
 
 @app.get("/health", response_class=PlainTextResponse)
 def health():
