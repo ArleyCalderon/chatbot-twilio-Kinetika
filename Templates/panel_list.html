@@ -65,7 +65,10 @@
 
   async function pollPending() {
     try {
-      const res = await fetch("/panel/pending/poll", { cache: "no-store" });
+      const res = await fetch("/panel/pending/poll", {
+        cache: "no-store",
+        credentials: "include"   
+      });
       if (!res.ok) return;
       const data = await res.json();
 
@@ -81,5 +84,3 @@
   pollPending();
   setInterval(pollPending, POLL_MS);
 </script>
-
-{% endblock %}
