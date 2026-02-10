@@ -75,16 +75,18 @@ def login_get(request: Request):
 
 @router.post("/login", response_class=HTMLResponse)
 def login_post(request: Request, username: str = Form(...), password: str = Form(...)):
-    raw_users = os.environ.get("PANEL_USERS", "").strip()
+    raw_users = os.environ.get("PANEL_USERS")
 
-    if raw_users:
-        users = parse_users(raw_users)
-        ok = (users.get(username) == password)
-    else:
-        # fallback legacy (por si aún no has creado PANEL_USERS)
-        env_user = os.environ.get("PANEL_USER")
-        env_pass = os.environ.get("PANEL_PASS")  # cambia en prod
-        ok = (username == env_user and password == env_pass)
+    if not raw_users:
+        # sin usuarios configurados = nadie entra
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Login no configurado", "user": None},
+            status_code=500,
+        )
+
+    users = parse_users(raw_users)
+    ok = (users.get(username) == password)
 
     if ok:
         request.session["user"] = username
