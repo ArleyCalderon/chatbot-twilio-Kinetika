@@ -158,8 +158,13 @@ async def whatsapp_webhook(request: Request):
         if identification and full_name:
             upsert_client(identification, full_name)
         resp.message(HANDOFF_TEXT)
-        save_session(from_number, step=-9, data=data)
 
+        if data["cliente_existente"] == True: 
+            save_session(from_number, step=-9, data=data)
+        else:
+            save_session(from_number, step=-10, data=data)
+        # si el cliente es nuevo, se le asigna step -10 para que el asistente lo registre en el CRM antes de pasarlo a un agente humano.
+        # Si el cliente ya existe, se le asigna step -9 para pasar directo a atención humana sin registro previo.
     return Response(content=str(resp), media_type="application/xml")
 
 # endregion
