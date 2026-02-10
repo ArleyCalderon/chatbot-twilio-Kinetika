@@ -159,7 +159,7 @@ async def whatsapp_webhook(request: Request):
             upsert_client(identification, full_name)
         resp.message(HANDOFF_TEXT)
 
-        if data["cliente_existente"] == True: 
+        if data.get("cliente_existente") is True:
             save_session(from_number, step=-9, data=data)
         else:
             save_session(from_number, step=-10, data=data)
