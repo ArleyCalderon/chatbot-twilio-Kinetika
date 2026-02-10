@@ -33,7 +33,7 @@ def _is_logged_in(request: Request) -> bool:
 
 
 def _require_login(request: Request):
-    if not _is_logged_in(request):
+    if not  (request):
         return RedirectResponse(url="/panel/login", status_code=302)
     return None
 
@@ -45,12 +45,48 @@ def login_get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "error": None, "user": None})
 
 
+def parse_users(raw: str) -> dict[str, str]:
+    """
+    Convierte un string tipo:
+      'user1:pass1,user2:pass2'
+    en un dict:
+      {'user1': 'pass1', 'user2': 'pass2'}
+    """
+    users: dict[str, str] = {}
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if ":" not in item:
+            continue  # item inválido, lo ignoramos
+        u, p = item.split(":", 1)  # solo parte por el primer ':'
+        u, p = u.strip(), p.strip()
+        if u:
+            users[u] = p
+    return users
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_get(request: Request):
+    if _is_logged_in(request):
+        return RedirectResponse(url="/panel", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": None, "user": None})
+
+
 @router.post("/login", response_class=HTMLResponse)
 def login_post(request: Request, username: str = Form(...), password: str = Form(...)):
-    env_user = os.environ.get("PANEL_USER", "asesor")
-    env_pass = os.environ.get("PANEL_PASS", "1234")  # cambia en prod
+    raw_users = os.environ.get("PANEL_USERS", "").strip()
 
-    if username == env_user and password == env_pass:
+    if raw_users:
+        users = parse_users(raw_users)
+        ok = (users.get(username) == password)
+    else:
+        # fallback legacy (por si aún no has creado PANEL_USERS)
+        env_user = os.environ.get("PANEL_USER")
+        env_pass = os.environ.get("PANEL_PASS")  # cambia en prod
+        ok = (username == env_user and password == env_pass)
+
+    if ok:
         request.session["user"] = username
         return RedirectResponse(url="/panel", status_code=302)
 
