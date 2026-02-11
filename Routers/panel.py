@@ -125,7 +125,7 @@ def panel_home(request: Request):
                 SELECT from_number, data, updated_at
                 FROM sessions
                 WHERE step = -9
-                ORDER BY updated_at DESC;
+                ORDER BY updated_at ASC;
             """)
             rows = cur.fetchall()
 
