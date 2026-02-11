@@ -15,7 +15,8 @@
           <th>From</th>
           <th>Documento</th>
           <th>Nombre</th>
-          <th>Motivo</th>
+          <!--<th>Motivo</th>-->
+          <th>Entidad</th>
           <th>Actualizado</th>
           <th style="width: 140px;">Acción</th>
         </tr>
@@ -31,7 +32,8 @@
             <td><code>{{ item.from_number }}</code></td>
             <td>{{ item.cedula }}</td>
             <td>{{ item.nombre }}</td>
-            <td>{{ item.reason }}</td>
+            <!--<td>{{ item.reason }}</td>-->
+            <td>{{ item.entidad }}</td>
             <td>{{ item.updated_at }}</td>
             <td>
             <span class="badge bg-danger me-2 conv-new {% if not item.has_new|default(false) %}d-none{% endif %}">

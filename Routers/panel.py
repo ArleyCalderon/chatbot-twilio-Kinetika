@@ -142,6 +142,7 @@ def panel_home(request: Request):
 
                 nombre = _display_name(data)
                 cedula = _display_cedula(data)
+                entidad = _display_entidad(data)
                 local_dt = updated_at.astimezone(local_tz)
 
                 cur.execute("""
@@ -165,7 +166,8 @@ def panel_home(request: Request):
                     "from_number": from_number,
                     "nombre": nombre,
                     "cedula": cedula,
-                    "reason": data.get("flow", "Atención humana"),
+                    #"reason": data.get("flow", "Atención humana"),
+                    "entidad": entidad,
                     "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
                     "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
                     "has_new": has_new,
@@ -190,6 +192,9 @@ def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
 def _display_toNumber(data: dict) -> str:
     return data.get("to_number") or data.get("to_number")
+
+def _display_entidad(data: dict) -> str:
+    return data.get("eps")
 
 def _display_Cirugia(data):
     return data.get("cual_cirugia")  # devuelve None si no existe

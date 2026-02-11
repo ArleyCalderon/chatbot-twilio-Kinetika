@@ -151,7 +151,8 @@ async def whatsapp_webhook(request: Request):
     if step < len(QUESTIONS):
         resp.message(QUESTIONS[step]["text"])
     else:
-        save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
+        #save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
+        #Comento la linea de arriba para guardar la sumisión solo después de intentar el upsert del cliente, así evitamos guardar datos de clientes nuevos que no se pudieron registrar en el CRM.
         identification = data.get("cedula")
         full_name = (data.get("nombre_completo") or data.get("nombres_raw") or "").strip()
 
@@ -163,6 +164,7 @@ async def whatsapp_webhook(request: Request):
             save_session(from_number, step=-9, data=data)
         else:
             save_session(from_number, step=-10, data=data)
+            save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
         # si el cliente es nuevo, se le asigna step -10 para que el asistente lo registre en el CRM antes de pasarlo a un agente humano.
         # Si el cliente ya existe, se le asigna step -9 para pasar directo a atención humana sin registro previo.
     return Response(content=str(resp), media_type="application/xml")
