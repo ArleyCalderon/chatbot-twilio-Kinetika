@@ -199,6 +199,9 @@ def _display_entidad(data: dict) -> str:
 def _display_Cirugia(data):
     return data.get("cual_cirugia")  # devuelve None si no existe
 
+def _display_Terapia(data):
+    return data.get("razon_terapia")  # devuelve None si no existe
+
 def _display_tipo_servicio(data: dict) -> str:
     return data.get("tipo_servicio")
 def _display_tipo_cita(data: dict) -> str:
@@ -233,6 +236,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     tipo_cita = _display_tipo_cita(data)
     to_number = _display_toNumber(data)
     cirugia= _display_Cirugia(data)
+    razonterapia= _display_Terapia(data)
     # traer mensajes
     messages = []
     last_message_id = 0
@@ -270,6 +274,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "last_message_id": last_message_id,
             "to_number": to_number,
             "cual_cirugia": cirugia,
+            "razon_terapia": razonterapia,
 
             
         },

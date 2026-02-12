@@ -37,6 +37,8 @@ QUESTIONS = [
 
     # Cita Component
     {"key": "tipo_cita", "text": "¿Tipo de cita?\n1) Valoración primera vez\n2) Control", "type": "tipocita"},
+    {"key": "razon_terapia", "text": "¿Por qué le remiten terapias?", "type": "text_min3",
+     "condition": lambda data: data.get("tipo_cita") == "Valoración primera vez"},
     {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"},
 
     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},

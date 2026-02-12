@@ -16,26 +16,30 @@
     </h4>
 
     <!--<div><code>{{ from_number }}</code></div>-->
-    <table>
-      <tr>
-        <td><strong>Paciente:</strong></td>
-        <td>{{ nombre }}</td>
-        <td><strong>Documento:</strong></td>
-        <td>{{ cedula }}</td>
-      </tr>
-      <tr>
-        <td><strong>Tipo cita:</strong></td>
-        <td>{{ tipo_cita }}</td>
-        <td><strong>Tipo servicio:</strong></td>
-        <td>{{ tipo_servicio }}</td>
-      </tr>
-      <tr>
-        <td><strong>Cirugía reciente?</strong></td>
-        <td>{{ cual_cirugia or "No" }}</td>
-        <td><strong>Línea:</strong></td> 
-        <td>{{ to_number }}</td>
-      </tr>
-    </table>
+    <div class="row g-2 small">
+      <div class="col-3 fw-bold text-muted">Paciente</div>
+      <div class="col-3">{{ nombre }}</div>
+
+      <div class="col-3 fw-bold text-muted">Documento</div>
+      <div class="col-3">{{ cedula }}</div>
+
+      <div class="col-3 fw-bold text-muted">Tipo cita</div>
+      <div class="col-3">{{ tipo_cita }}</div>
+
+      <div class="col-3 fw-bold text-muted">Tipo servicio</div>
+      <div class="col-3">{{ tipo_servicio }}</div>
+
+      <div class="col-3 fw-bold text-muted">¿Cirugía reciente?</div>
+      <div class="col-3">{{ cual_cirugia or "No" }}</div>
+
+      <div class="col-3 fw-bold text-muted">¿Razon Terapias?</div>
+      <div class="col-3">{{ razon_terapia or "No" }}</div>
+
+      <div class="col-3 fw-bold text-muted">Línea</div>
+      <div class="col-3">
+        <span class="badge bg-secondary">{{ to_number }}</span>
+      </div>
+    </div>
 
   </div>
 
