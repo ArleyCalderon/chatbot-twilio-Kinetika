@@ -16,30 +16,67 @@
     </h4>
 
     <!--<div><code>{{ from_number }}</code></div>-->
-    <div class="row g-2 small">
-      <div class="col-3 fw-bold text-muted">Paciente</div>
-      <div class="col-3">{{ nombre }}</div>
+    <div class="card-body p-0">
+      <div class="row g-1 small">
+        <!-- ITEM -->
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">Paciente</div>
+            <div class="flex-grow-1 text-truncate">{{ nombre }}</div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">Documento</div>
-      <div class="col-3">{{ cedula }}</div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">Documento</div>
+            <div class="flex-grow-1 text-truncate">{{ cedula }}</div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">Tipo cita</div>
-      <div class="col-3">{{ tipo_cita }}</div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">Tipo cita</div>
+            <div class="flex-grow-1">{{ tipo_cita }}</div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">Tipo servicio</div>
-      <div class="col-3">{{ tipo_servicio }}</div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">Tipo servicio</div>
+            <div class="flex-grow-1">{{ tipo_servicio }}</div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">¿Cirugía reciente?</div>
-      <div class="col-3">{{ cual_cirugia or "No" }}</div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">¿Cirugía reciente?</div>
+            <div class="flex-grow-1">{{ cual_cirugia or "No" }}</div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">¿Razon Terapias?</div>
-      <div class="col-3">{{ razon_terapia or "No" }}</div>
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">Línea</div>
+            <div class="flex-grow-1">
+              <span class="badge bg-secondary">{{ to_number }}</span>
+            </div>
+          </div>
+        </div>
 
-      <div class="col-3 fw-bold text-muted">Línea</div>
-      <div class="col-3">
-        <span class="badge bg-secondary">{{ to_number }}</span>
+        <!-- Si tienes Razón terapias, agrégala igual -->
+        {% if razon_terapias %}
+        <div class="col-12 col-md-6">
+          <div class="d-flex align-items-start gap-2">
+            <div class="fw-semibold text-muted" style="min-width: 140px;">¿Razón terapias?</div>
+            <div class="flex-grow-1">{{ razon_terapias }}</div>
+          </div>
+        </div>
+        {% endif %}
+
       </div>
     </div>
+  </div>
+
 
   </div>
 
