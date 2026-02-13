@@ -44,6 +44,9 @@ QUESTIONS = [
     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
     {"key": "cual_cirugia", "text": "¿Cuál cirugia reciente tienes?", "type": "text_min3",
      "condition": lambda data: data.get("cirugia") == "SI"},
+    {"key": "lugar_cita", "text": "¿Dónde desea agendar su cita?\n1) sede circunvalar\n2) sede dosquebradas", "type": "lugarcita",
+     "condition": lambda data: data.get("tipo_cita") == "Valoración primera vez"},
+     
 ]
 #endregion
 
@@ -238,6 +241,14 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
             return True, "Valoración primera vez", None
         if m in {"2", "control"}:
             return True, "Control", None
+        return False, None, "Responde con 1 o 2 ."
+    
+    if t == "lugarcita":
+        m = msg.lower()
+        if m in {"1", "sede circunvalar", "circunvalar"}:
+            return True, "sede circunvalar", None
+        if m in {"2", "sede dosquebradas", "dosquebradas"}:
+            return True, "sede dosquebradas", None
         return False, None, "Responde con 1 o 2 ."
 
     if t == "tiposervicio":

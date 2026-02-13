@@ -20,10 +20,10 @@ def load_session(from_number: str):
 
             # ⏰ Expiración:
             # - Flujo normal: 24h
-            # - Handoff (asesor): 72h (3 días)
+            # - Handoff (asesor): 96h (4 días)
             expiry_hours = 24
             if step == -9:
-                expiry_hours = 72
+                expiry_hours = 96
 
             if datetime.now(timezone.utc) - updated_at > timedelta(hours=expiry_hours):
                 delete_session(from_number)
