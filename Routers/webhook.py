@@ -172,7 +172,8 @@ async def whatsapp_webhook(request: Request):
         else:
             save_session(from_number, step=-10, data=data)
             save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
-        save_message(from_number, "in", "Inicio de conversación", message_sid)
+        save_message(from_number, "in", "Inicio de conversación", message_sid, to_number=to_number)
+        
         # si el cliente es nuevo, se le asigna step -10 para que el asistente lo registre en el CRM antes de pasarlo a un agente humano.
         # Si el cliente ya existe, se le asigna step -9 para pasar directo a atención humana sin registro previo.
     return Response(content=str(resp), media_type="application/xml")
