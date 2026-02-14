@@ -479,7 +479,7 @@ def panel_pending_poll(request: Request):
                 cur.execute("""
                     SELECT COALESCE(MAX(id), 0)
                     FROM messages
-                    WHERE from_number = %s AND direction = 'in';
+                    WHERE from_number = %s AND direction = 'in' AND body <> 'Inicio de conversación'; 
                 """, (from_number,))
                 latest_in_id = cur.fetchone()[0]
 
