@@ -22,11 +22,29 @@ async def whatsapp_webhook(request: Request):
 
     resp = MessagingResponse()
 
-    now_colombia = datetime.now(ZoneInfo("America/Bogota"))
-    weekday = now_colombia.weekday()  # 0=lunes, 6=domingo
+    # -------------------------
+    # Horario de atención (Colombia)
+    # -------------------------
+    tz = ZoneInfo("America/Bogota")
+    now_co = datetime.now(tz)
 
-    if weekday >= 5:  # sábado (5) o domingo (6)
-        return Response(content="", status_code=204)
+    OPEN_DAYS = {0, 1, 2, 3, 4}   # Lunes(0) a Viernes(4)
+    OPEN_START_HOUR = 8          # 08:00
+    OPEN_END_HOUR = 18           # 18:00 (18:00 en adelante ya está cerrado)
+
+    is_open_day = now_co.weekday() in OPEN_DAYS
+    is_open_hour = (OPEN_START_HOUR <= now_co.hour < OPEN_END_HOUR)
+
+    if not (is_open_day and is_open_hour):
+        resp.message(
+            "Hola 👋\n"
+            "Nuestro horario de atención es *lunes a viernes de 8:00 a 18:00* (hora Colombia).\n"
+            "Escríbenos dentro de ese horario y con gusto te atendemos 🙂"
+        )
+        return Response(content=str(resp), media_type="application/xml")
+
+
+# Nota: como ya cargamos session/step/data arriba, NO los vuelvas a cargar más abajo.
 
     # Normalización única (NO la sobreescribas después)
     cmd = (incoming_msg or "").lower().strip()
