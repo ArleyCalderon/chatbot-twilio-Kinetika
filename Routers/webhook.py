@@ -6,6 +6,7 @@ from datetime import datetime, timezone, date, timedelta
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
 from Services.chat_store import get_client_by_identification
+from zoneinfo import ZoneInfo
 
 
 router = APIRouter()
@@ -20,6 +21,12 @@ async def whatsapp_webhook(request: Request):
     #save_message(from_number, "in", incoming_msg, message_sid)
 
     resp = MessagingResponse()
+
+    now_colombia = datetime.now(ZoneInfo("America/Bogota"))
+    weekday = now_colombia.weekday()  # 0=lunes, 6=domingo
+
+    if weekday >= 5:  # sábado (5) o domingo (6)
+        return Response(content="", status_code=204)
 
     # Normalización única (NO la sobreescribas después)
     cmd = (incoming_msg or "").lower().strip()
@@ -165,6 +172,7 @@ async def whatsapp_webhook(request: Request):
         else:
             save_session(from_number, step=-10, data=data)
             save_submission(from_number, data.get("flow", "agendar"), data, message_sid)
+        save_message(from_number, "in", "Inicio de conversación", message_sid)
         # si el cliente es nuevo, se le asigna step -10 para que el asistente lo registre en el CRM antes de pasarlo a un agente humano.
         # Si el cliente ya existe, se le asigna step -9 para pasar directo a atención humana sin registro previo.
     return Response(content=str(resp), media_type="application/xml")
