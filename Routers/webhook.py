@@ -117,7 +117,7 @@ async def whatsapp_webhook(request: Request):
         save_session(from_number, step=-3, data=data)
         resp.message(CANCEL_DATE_PROMPT)
         return Response(content=str(resp), media_type="application/xml")
-
+    
     # ---------------------------------
     # STEP -3: Fecha de cita a cancelar
     # ---------------------------------
@@ -138,19 +138,47 @@ async def whatsapp_webhook(request: Request):
 
         data["fecha_cancelacion"] = fecha.strftime("%d/%m/%Y")
         data["wa_from"] = to_number  # Guardamos el número de destino (tu WA) para usarlo en la notificación de cancelación
-
-        save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
+        save_session(from_number, step=-4, data=data)
+        
 
         resp.message(
             f"Listo ✅\n"
-            f"Estoy procesando la cancelación de la cita del *{data['fecha_cancelacion']}*."
+            f"Estoy procesando la cancelación de la cita del *{data['fecha_cancelacion']}*.\n"
+            f"¿Desea reagendar su cita?\n"
+            f"1) Sí\n"
+            f"2) No\n"
         )
 
         print(f"[CANCELACION] from={from_number} data={data}")
 
-        delete_session(from_number)
+        #delete_session(from_number)
         return Response(content=str(resp), media_type="application/xml")
 
+    # ---------------------------------
+    # STEP -4: Pregunta si desea reagendar (cancelar)
+    # ---------------------------------
+    if step == -4:
+        m = cmd
+
+        if m in {"1", "si", "sí", "s"}:
+            data["reason"] = "reagendar"
+            save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
+            save_session(from_number, step=-9, data=data)
+            resp.message("Un asesor lo apoyará a reagendar su cita lo antes posible 🙂")
+            return Response(content=str(resp), media_type="application/xml")
+
+        if m in {"2", "no", "n"}:
+            data["reagendar"] = False
+            save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
+            delete_session(from_number)
+            return Response(content=str(resp), media_type="application/xml")  # silencio
+
+        resp.message("Porfa elige una opción:\n1) Sí\n2) No")
+        return Response(content=str(resp), media_type="application/xml")
+
+
+
+    
     # -------------------------
     # Flujo normal (agendar)
     # -------------------------

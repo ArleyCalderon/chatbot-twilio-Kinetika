@@ -41,7 +41,8 @@ QUESTIONS = [
      "condition": lambda data: data.get("tipo_cita") == "Valoración primera vez"},
     {"key": "tipo_servicio", "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria", "type": "tiposervicio"},
 
-    {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno"},
+    {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno",
+     "condition": lambda data: data.get("tipo_cita") == "Valoración primera vez"},
     {"key": "cual_cirugia", "text": "¿Cuál cirugia reciente tienes?", "type": "text_min3",
      "condition": lambda data: data.get("cirugia") == "SI"},
     {"key": "lugar_cita", "text": "¿Dónde desea agendar su cita?\n1) sede circunvalar\n2) sede dosquebradas", "type": "lugarcita",
@@ -304,6 +305,11 @@ CANCEL_DATE_PROMPT = (
     "Indica la *fecha de la cita* que deseas cancelar.\n"
     "Formato: DD/MM/AAAA\n"
     "Ejemplo: 25/09/2026"
+)
+RequiereCita = (
+    "Desea reagendar su cita?.\n"
+    "1) Sí\n"
+    "2) No"
 )
 
 #  Modo handoff (asesor humano)

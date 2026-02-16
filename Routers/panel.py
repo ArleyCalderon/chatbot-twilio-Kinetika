@@ -166,7 +166,7 @@ def panel_home(request: Request):
                     "from_number": from_number,
                     "nombre": nombre,
                     "cedula": cedula,
-                    #"reason": data.get("flow", "Atención humana"),
+                    "reason": data.get("reason", "Agendar"),
                     "entidad": entidad,
                     "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
                     "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
@@ -190,6 +190,7 @@ def _display_name(data: dict) -> str:
 
 def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"
+
 def _display_toNumber(data: dict) -> str:
     return data.get("to_number") or data.get("to_number")
 
