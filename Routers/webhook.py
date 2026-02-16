@@ -137,6 +137,8 @@ async def whatsapp_webhook(request: Request):
             return Response(content=str(resp), media_type="application/xml")
 
         data["fecha_cancelacion"] = fecha.strftime("%d/%m/%Y")
+        data["wa_from"] = to_number  # Guardamos el número de destino (tu WA) para usarlo en la notificación de cancelación
+
         save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
 
         resp.message(
