@@ -26,7 +26,7 @@ async def whatsapp_webhook(request: Request):
     # -------------------------
     # Horario de atención (Colombia)
     # -------------------------
-    """tz = ZoneInfo("America/Bogota")
+    tz = ZoneInfo("America/Bogota")
     now_co = datetime.now(tz)
 
     OPEN_DAYS = {0, 1, 2, 3, 4}   # Lunes(0) a Viernes(4)
@@ -42,7 +42,7 @@ async def whatsapp_webhook(request: Request):
             "Nuestro horario de atención es *lunes a viernes de 8:00 a 18:00* (hora Colombia).\n"
             "Escríbenos dentro de ese horario y con gusto te atendemos 🙂"
         )
-        return Response(content=str(resp), media_type="application/xml")"""
+        return Response(content=str(resp), media_type="application/xml")
 
 
 # Nota: como ya cargamos session/step/data arriba, NO los vuelvas a cargar más abajo.
@@ -107,7 +107,7 @@ async def whatsapp_webhook(request: Request):
             save_session(from_number, step=-20, data=data)
             resp.message(
                 "¿Para qué servicio necesitas el informe?\n"
-                "1) Terapia Física\n"
+                "1) Fisioterapia\n"
                 "2) Hidroterapia\n"
                 "Responde con 1 o 2"
             )
