@@ -29,7 +29,7 @@
       {% else %}
         {% for item in pending %}
           <tr data-conv="{{ item.from_number }}">
-            <td><code>{{ item.from_number }}</code></td>
+            <td class="text-muted">{{ item.from_number }}</td>
             <td>{{ item.cedula }}</td>
             <td>{{ item.nombre }}</td>
             <td>{{ item.reason }}</td>
