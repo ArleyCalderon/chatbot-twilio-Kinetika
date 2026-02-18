@@ -161,9 +161,9 @@ def panel_home(request: Request):
                 last_read = r[0] if r else 0
 
                 has_new = latest_in_id > last_read
-
+                clean_number = ''.join(filter(str.isdigit, from_number))[-10:]
                 pending.append({
-                    "from_number": from_number,
+                    "from_number": clean_number,
                     "nombre": nombre,
                     "cedula": cedula,
                     "reason": data.get("reason", "Agendar"),
@@ -186,7 +186,7 @@ def _display_name(data: dict) -> str:
         data.get("segundo_apellido"),
     ]
     parts = [p for p in parts if p]
-    return " ".join(parts) if parts else "(sin nombre)"
+    return " ".join(parts) if parts else "Paciente"
 
 def _display_cedula(data: dict) -> str:
     return data.get("cedula") or data.get("cedula_cancelacion") or "(sin cédula)"

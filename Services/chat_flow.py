@@ -17,7 +17,7 @@ QUESTIONS = [
     # Ubicación
     {"key": "pais_origen", "text": "País de origen:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
     {"key": "direccion", "text": "Dirección completa:\nEj: Cra 80 # 45-20, Medellín", "type": "text_min6","condition": lambda data: not data.get("cliente_existente")},
-    {"key": "departamento", "text": "Departamento:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
+    {"key": "departamento", "text": "Departamento:\nEj: Risaralda", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
     {"key": "municipio", "text": "Municipio:", "type": "text_min3","condition": lambda data: not data.get("cliente_existente")},
     {"key": "zona", "text": "Zona:\n1) Urbana\n2) Rural", "type": "zone","condition": lambda data: not data.get("cliente_existente")},
 
