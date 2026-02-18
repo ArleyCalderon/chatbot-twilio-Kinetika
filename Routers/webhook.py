@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import Response
 from Services.chat_store import get_client_by_identification
 from zoneinfo import ZoneInfo
+import re
 
 
 router = APIRouter()
@@ -25,7 +26,7 @@ async def whatsapp_webhook(request: Request):
     # -------------------------
     # Horario de atención (Colombia)
     # -------------------------
-    tz = ZoneInfo("America/Bogota")
+    """tz = ZoneInfo("America/Bogota")
     now_co = datetime.now(tz)
 
     OPEN_DAYS = {0, 1, 2, 3, 4}   # Lunes(0) a Viernes(4)
@@ -41,7 +42,7 @@ async def whatsapp_webhook(request: Request):
             "Nuestro horario de atención es *lunes a viernes de 8:00 a 18:00* (hora Colombia).\n"
             "Escríbenos dentro de ese horario y con gusto te atendemos 🙂"
         )
-        return Response(content=str(resp), media_type="application/xml")
+        return Response(content=str(resp), media_type="application/xml")"""
 
 
 # Nota: como ya cargamos session/step/data arriba, NO los vuelvas a cargar más abajo.
@@ -100,6 +101,18 @@ async def whatsapp_webhook(request: Request):
             save_session(from_number, step=step, data=data)
             resp.message(CANCEL_PROMPT)
             return Response(content=str(resp), media_type="application/xml")
+        
+        if m in {"3", "informe", "informe final", "solicitud informe final"}:
+            data["flow"] = "informe_final"
+            save_session(from_number, step=-20, data=data)
+            resp.message(
+                "¿Para qué servicio necesitas el informe?\n"
+                "1) Terapia Física\n"
+                "2) Hidroterapia\n"
+                "Responde con 1 o 2"
+            )
+            return Response(content=str(resp), media_type="application/xml")
+
 
         resp.message("No te entendí 😅\n" + MENU_TEXT)
         return Response(content=str(resp), media_type="application/xml")
@@ -176,6 +189,70 @@ async def whatsapp_webhook(request: Request):
 
         resp.message("Porfa elige una opción:\n1) Sí\n2) No")
         return Response(content=str(resp), media_type="application/xml")
+    
+    # ---------------------------------
+    # STEP -20: Tipo de informe (informe final)
+    if step == -20:
+        m = cmd
+
+        if m in {"1", "terapia fisica", "terapia física"}:
+            data["tipo_informe"] = "FISIOTERAPIA INFORME FINAL"
+        elif m in {"2", "hidroterapia"}:
+            data["tipo_informe"] = "HIDROTERAPIA INFORME FINAL"
+        else:
+            resp.message("Responde con 1 (Terapia Física) o 2 (Hidroterapia).")
+            return Response(content=str(resp), media_type="application/xml")
+
+        save_session(from_number, step=-21, data=data)
+        resp.message("Escribe tu número de documento (solo números):")
+        return Response(content=str(resp), media_type="application/xml")
+    
+    if step == -21:
+        digits = normalize_digits(incoming_msg)
+
+        if len(digits) < 6 or len(digits) > 15:
+            resp.message("El documento debe tener entre 6 y 15 dígitos. Intenta de nuevo.")
+            return Response(content=str(resp), media_type="application/xml")
+
+        data["cedula_informe"] = digits
+        save_session(from_number, step=-22, data=data)
+        resp.message("Escribe tu correo electrónico:")
+        return Response(content=str(resp), media_type="application/xml")
+    
+
+    if step == -22:
+        email = incoming_msg.strip().lower()
+
+        if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+            resp.message("Ese correo no parece válido 😅\nEj: nombre@correo.com")
+            return Response(content=str(resp), media_type="application/xml")
+
+        data["email_informe"] = email
+
+        # Guardar submission
+        save_submission(from_number, data.get("flow", "informe_final"), data, message_sid)
+
+        # Pasarlo a asesor
+        #delete_session(from_number)
+        save_session(from_number, step=-23, data=data) #no es necesario pasar a asesor porque el informe se procesa automáticamente sin intervención humana, así que lo dejamos en step -22 para evitar confusiones.
+        #save_message(from_number, "in", "Inicio de conversación", message_sid, to_number=to_number)
+
+        resp.message(
+            "Perfecto ✅\n"
+            "Tu solicitud de informe fue registrada.\n"
+            "En unos minutos puede revisar su correo electrónico con el informe solicitado."
+        )
+
+        return Response(content=str(resp), media_type="application/xml")
+    # -------------------------
+    # STEP -23: Informe registrado (modo mudo total)
+    # -------------------------
+    if step == -23:
+        return Response(content="", status_code=204)
+
+
+    #fin bloque informe final
+    # ---------------------------------
 
 
 

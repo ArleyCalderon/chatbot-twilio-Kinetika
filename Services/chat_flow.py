@@ -296,8 +296,9 @@ MENU_TEXT = (
     
     "Hola👋 te damos la bienvenida. Gracias por ponerte en contacto con nosotros. Antes de iniciar, es necesario que aceptes los términos y condiciones de WhatsApp.\n¿Qué deseas hacer?\n"
     "1) Agendar cita\n"
-    "2) Cancelar cita\n\n"
-    "Responde con 1 o 2"
+    "2) Cancelar cita\n"
+    "3) Solicitud informe final\n"
+    "Responde con 1, 2 o 3"
 )
 
 CANCEL_PROMPT = "Para cancelar, escribe tu número de documento (solo números):"
@@ -319,7 +320,7 @@ HANDOFF_TEXT = (
     "📌 Importante:\n"
     "• La respuesta puede tardar debido a altos volúmenes de solicitudes.\n"
     "• Te contactaremos por este mismo medio.\n\n"
-    "👉 Si en cualquier momento deseas volver al bot, escribe *menu*."
+    #"👉 Si en cualquier momento deseas volver al bot, escribe *menu*."
 )
 
 
