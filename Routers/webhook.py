@@ -83,6 +83,19 @@ async def whatsapp_webhook(request: Request):
 
         return Response(content="", status_code=204)
 
+    # STEP -10: En cola para registro CRM (modo mudo)
+    if step == -10:
+        save_message(from_number, "in", incoming_msg, message_sid, to_number=to_number)
+
+        m = cmd
+        if m in {"menu", "menú", "inicio", "empezar", "volver"}:
+            save_session(from_number, step=-1, data={})
+            resp.message(MENU_TEXT)
+            return Response(content=str(resp), media_type="application/xml")
+
+        # si quieres silencio total:
+        return Response(content="", status_code=204)
+    
     # -------------------------
     # STEP -1: Menú principal
     # -------------------------
