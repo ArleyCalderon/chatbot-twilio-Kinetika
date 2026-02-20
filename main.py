@@ -10,12 +10,10 @@ from Routers.notify import router as notify_router
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.environ.get("PANEL_SECRET_KEY", "dev-secret-change-me"),
-    same_site="lax",
-    https_only=True,
-)
+secret = os.environ.get("PANEL_SECRET_KEY")
+if not secret:
+    raise RuntimeError("PANEL_SECRET_KEY no configurada")
+app.add_middleware(SessionMiddleware, secret_key=secret, same_site="lax", https_only=True,max_age=60*60*8,)
 
 @app.on_event("startup")
 def on_startup():
