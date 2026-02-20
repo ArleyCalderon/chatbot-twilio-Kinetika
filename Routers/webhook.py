@@ -241,13 +241,12 @@ async def whatsapp_webhook(request: Request):
             return Response(content=str(resp), media_type="application/xml")
 
         data["email_informe"] = email
-
+        data["wa_from"] = to_number 
         # Guardar submission
         save_submission(from_number, data.get("flow", "informe_final"), data, message_sid)
 
         # Pasarlo a asesor
         #delete_session(from_number)
-        data["wa_from"] = to_number 
         save_session(from_number, step=-23, data=data) #no es necesario pasar a asesor porque el informe se procesa automáticamente sin intervención humana, así que lo dejamos en step -22 para evitar confusiones.
         #save_message(from_number, "in", "Inicio de conversación", message_sid, to_number=to_number)
 
