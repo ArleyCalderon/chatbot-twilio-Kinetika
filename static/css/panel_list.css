@@ -1,0 +1,129 @@
+
+/* ===== SaaS Premium (solo CSS, sin frameworks extra) ===== */
+
+/* Fondo más suave */
+body{
+background: #f6f7fb;
+}
+
+/* Header */
+.pending-header{
+display:flex;
+align-items:flex-end;
+justify-content:space-between;
+gap:12px;
+margin: 6px 0 14px 0;
+}
+.pending-header h3{
+margin:0;
+font-weight: 800;
+letter-spacing: -.2px;
+}
+.pending-header .text-muted{
+font-weight: 600;
+}
+
+/* Card */
+.pending-card{
+border: 1px solid rgba(15,23,42,.10);
+border-radius: 16px;
+box-shadow: 0 12px 28px rgba(15,23,42,.08);
+background: #fff;
+overflow: hidden;
+}
+
+/* Wrap */
+.pending-table-wrap{
+overflow:auto;
+}
+
+/* Tabla: más “fina” */
+.pending-table{
+font-size: 14px;
+}
+.pending-table td, .pending-table th{
+padding: 14px 16px;
+vertical-align: middle;
+white-space: nowrap;
+}
+
+/* Header sticky con look moderno */
+.pending-table thead th{
+position: sticky;
+top: 0;
+z-index: 2;
+background: rgba(255,255,255,.92);
+backdrop-filter: blur(8px);
+border-bottom: 1px solid rgba(15,23,42,.10);
+font-weight: 800;
+color: #0f172a;
+}
+
+/* Filas: menos zebra, más hover */
+.table-striped > tbody > tr:nth-of-type(odd) > *{
+background-color: rgba(15,23,42,.02);
+}
+.pending-table tbody tr{
+transition: background .12s ease, transform .06s ease;
+}
+.pending-table tbody tr:hover{
+background: rgba(59,130,246,.06);
+}
+
+/* Columna acción */
+.col-action{
+text-align:right;
+width: 170px;
+}
+
+/* Badge Nuevo: premium */
+.badge-new{
+display:inline-flex;
+align-items:center;
+gap:6px;
+padding: 6px 10px;
+border-radius: 999px;
+font-weight: 800;
+font-size: 12px;
+background: rgba(239,68,68,.10);
+color: #b91c1c;
+border: 1px solid rgba(239,68,68,.22);
+}
+.badge-new::before{
+content:"";
+width:8px;
+height:8px;
+border-radius:999px;
+background: #ef4444;
+box-shadow: 0 0 0 3px rgba(239,68,68,.18);
+}
+
+/* Botón Abrir: más “app” */
+.btn-open{
+border-radius: 12px;
+padding: 9px 14px;
+font-weight: 800;
+box-shadow: 0 10px 18px rgba(59,130,246,.18);
+}
+.btn-open:active{
+transform: translateY(1px);
+box-shadow: 0 6px 12px rgba(59,130,246,.16);
+}
+
+/* Texto “From” un poquito más suave */
+.pending-table td.text-muted{
+color: rgba(15,23,42,.65) !important;
+font-weight: 600;
+}
+
+/* Scrollbar más agradable (Chrome/Edge) */
+.pending-table-wrap::-webkit-scrollbar{
+height: 10px;
+}
+.pending-table-wrap::-webkit-scrollbar-thumb{
+background: rgba(15,23,42,.20);
+border-radius: 999px;
+}
+.pending-table-wrap::-webkit-scrollbar-track{
+background: rgba(15,23,42,.06);
+}

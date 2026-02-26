@@ -1,0 +1,31 @@
+/* ===== GLOBAL PANEL STYLES ===== */
+
+body {
+  background: #f6f7fb;
+  font-size: 14px;
+}
+
+/* Cards reutilizables */
+.panel-card {
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(15,23,42,.07);
+  background: #fff;
+}
+
+/* Botones suaves reutilizables */
+.btn-soft {
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+/* Badges tipo pill reutilizables */
+.badge-pill {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-weight: 700;
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(15,23,42,.03);
+  color: rgba(15,23,42,.75);
+}

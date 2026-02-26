@@ -1,114 +1,11 @@
 {% extends "base.html" %}
 {% set title = "Chat" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/panel_chat.css') }}">
+{% endblock %}
+
 {% block content %}
-
-<style>
-  /* ===== SaaS Premium (acorde a Pendientes) ===== */
-
-  body { background: #f6f7fb; }
-
-  .chat-topbar{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:12px;
-    margin: 6px 0 14px 0;
-  }
-  .chat-topbar h4{
-    margin:0;
-    font-weight: 800;
-    letter-spacing: -.2px;
-  }
-
-  .chat-meta{
-    border: 1px solid rgba(15,23,42,.10);
-    border-radius: 16px;
-    box-shadow: 0 12px 28px rgba(15,23,42,.08);
-    background:#fff;
-    padding: 14px 16px;
-  }
-
-  .chat-card{
-    border: 1px solid rgba(15,23,42,.10);
-    border-radius: 16px;
-    box-shadow: 0 12px 28px rgba(15,23,42,.08);
-    background:#fff;
-    overflow:hidden;
-  }
-
-  .chat-box{
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 14px;
-  }
-
-  /* Burbujas */
-  .bubble{
-    max-width: 75%;
-    border-radius: 16px;
-    padding: 10px 12px;
-    border: 1px solid rgba(15,23,42,.10);
-    box-shadow: 0 6px 14px rgba(15,23,42,.06);
-  }
-  .bubble-in{
-    background: rgba(15,23,42,.03);
-  }
-  .bubble-out{
-    background: rgba(59,130,246,.10);
-    border-color: rgba(59,130,246,.22);
-  }
-
-  .bubble-meta{
-    font-size: 12px;
-    color: rgba(15,23,42,.55);
-    font-weight: 800;
-    margin-bottom: 6px;
-  }
-
-  /* Botones */
-  .btn-soft{
-    border-radius: 12px;
-    padding: 9px 14px;
-    font-weight: 800;
-  }
-  .btn-open-premium{
-    border-radius: 12px;
-    padding: 9px 14px;
-    font-weight: 800;
-    box-shadow: 0 10px 18px rgba(59,130,246,.18);
-  }
-  .btn-open-premium:active{
-    transform: translateY(1px);
-    box-shadow: 0 6px 12px rgba(59,130,246,.16);
-  }
-
-  /* Inputs */
-  .chat-input textarea.form-control{
-    border-radius: 14px;
-    padding: 12px 12px;
-  }
-
-  /* Badges suaves */
-  .badge-pill{
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-weight: 800;
-    border: 1px solid rgba(15,23,42,.10);
-    background: rgba(15,23,42,.03);
-    color: rgba(15,23,42,.75);
-  }
-
-  /* Scrollbar (Chrome/Edge) */
-  .chat-box::-webkit-scrollbar{ width: 10px; }
-  .chat-box::-webkit-scrollbar-thumb{
-    background: rgba(15,23,42,.20);
-    border-radius: 999px;
-  }
-  .chat-box::-webkit-scrollbar-track{
-    background: rgba(15,23,42,.06);
-  }
-</style>
 
 <div class="chat-topbar">
   <div class="flex-grow-1">
@@ -179,12 +76,12 @@
     </div>
   </div>
 
-  <div class="d-flex flex-row flex-lg-column gap-2">
+  <div class="chat-actions">
     <a class="btn btn-outline-secondary btn-soft btn-sm" href="/panel">← Volver</a>
 
-    <form method="post" action="/panel/chat/close">
+    <form method="post" action="/panel/chat/close" class="m-0">
       <input type="hidden" name="from_number" value="{{ from_number }}">
-      <button class="btn btn-danger btn-soft btn-sm w-100"
+      <button class="btn btn-danger btn-soft btn-sm"
               onclick="return confirm('¿Cerrar y borrar historial?');">
         Cerrar + Borrar
       </button>

@@ -1,85 +1,17 @@
 {% extends "base.html" %}
 {% set title = "Pendientes" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/panel_list.css') }}">
+{% endblock %}
+
 {% block content %}
-
-<style>
-  /* ===== Panel look pro, minimalista (sin romper Bootstrap) ===== */
-
-  .pending-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom: 12px;
-  }
-
-  .pending-card{
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 14px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    overflow: hidden;
-  }
-
-  /* Responsive horizontal */
-  .pending-table-wrap{
-    overflow:auto;
-  }
-
-  /* Header sticky */
-  .pending-table thead th{
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #f8f9fa;
-    border-bottom: 1px solid rgba(0,0,0,.08);
-    font-weight: 700;
-    letter-spacing: .2px;
-  }
-
-  /* Mejor lectura */
-  .pending-table td, .pending-table th{
-    vertical-align: middle;
-    padding: 12px 14px;
-    white-space: nowrap; /* evita saltos feos; el scroll lo maneja el wrap */
-  }
-
-  .pending-table tbody tr{
-    transition: background .12s ease;
-  }
-  .pending-table tbody tr:hover{
-    background: #f4f8ff;
-  }
-
-  /* Acción alineada */
-  .col-action{
-    text-align: right;
-    width: 160px;
-  }
-
-  /* Badge "Nuevo" más bonito */
-  .badge-new{
-    display:inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 12px;
-    background: #ffe8e8;
-    color: #b02a37;
-    border: 1px solid rgba(176,42,55,.18);
-  }
-
-  /* Botón consistente */
-  .btn-open{
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-weight: 700;
-  }
-</style>
 
 <div class="pending-header">
   <h3 class="mb-0">Conversaciones pendientes</h3>
-  <span class="text-muted small">Total: {{ pending|length }}</span>
+  <span class="badge bg-light text-dark border">
+  Total: {{ pending|length }}
+  </span>
 </div>
 
 <div class="card shadow-sm pending-card">
