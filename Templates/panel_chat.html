@@ -2,106 +2,212 @@
 {% set title = "Chat" %}
 
 {% block content %}
-<div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between mb-3 gap-3">
 
-  <!-- IZQUIERDA -->
+<style>
+  /* ===== SaaS Premium (acorde a Pendientes) ===== */
+
+  body { background: #f6f7fb; }
+
+  .chat-topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin: 6px 0 14px 0;
+  }
+  .chat-topbar h4{
+    margin:0;
+    font-weight: 800;
+    letter-spacing: -.2px;
+  }
+
+  .chat-meta{
+    border: 1px solid rgba(15,23,42,.10);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(15,23,42,.08);
+    background:#fff;
+    padding: 14px 16px;
+  }
+
+  .chat-card{
+    border: 1px solid rgba(15,23,42,.10);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(15,23,42,.08);
+    background:#fff;
+    overflow:hidden;
+  }
+
+  .chat-box{
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  /* Burbujas */
+  .bubble{
+    max-width: 75%;
+    border-radius: 16px;
+    padding: 10px 12px;
+    border: 1px solid rgba(15,23,42,.10);
+    box-shadow: 0 6px 14px rgba(15,23,42,.06);
+  }
+  .bubble-in{
+    background: rgba(15,23,42,.03);
+  }
+  .bubble-out{
+    background: rgba(59,130,246,.10);
+    border-color: rgba(59,130,246,.22);
+  }
+
+  .bubble-meta{
+    font-size: 12px;
+    color: rgba(15,23,42,.55);
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  /* Botones */
+  .btn-soft{
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-weight: 800;
+  }
+  .btn-open-premium{
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-weight: 800;
+    box-shadow: 0 10px 18px rgba(59,130,246,.18);
+  }
+  .btn-open-premium:active{
+    transform: translateY(1px);
+    box-shadow: 0 6px 12px rgba(59,130,246,.16);
+  }
+
+  /* Inputs */
+  .chat-input textarea.form-control{
+    border-radius: 14px;
+    padding: 12px 12px;
+  }
+
+  /* Badges suaves */
+  .badge-pill{
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-weight: 800;
+    border: 1px solid rgba(15,23,42,.10);
+    background: rgba(15,23,42,.03);
+    color: rgba(15,23,42,.75);
+  }
+
+  /* Scrollbar (Chrome/Edge) */
+  .chat-box::-webkit-scrollbar{ width: 10px; }
+  .chat-box::-webkit-scrollbar-thumb{
+    background: rgba(15,23,42,.20);
+    border-radius: 999px;
+  }
+  .chat-box::-webkit-scrollbar-track{
+    background: rgba(15,23,42,.06);
+  }
+</style>
+
+<div class="chat-topbar">
   <div class="flex-grow-1">
-    <h4 class="mb-3">Chat {{ from_number }}</h4>
+    <h4>Chat {{ from_number }}</h4>
 
-    <div class="row g-2 small">
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">Paciente:</div>
-          <div>{{ nombre }}</div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">Documento:</div>
-          <div>{{ cedula }}</div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">Tipo cita:</div>
-          <div>{{ tipo_cita }}</div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">Tipo servicio:</div>
-          <div>{{ tipo_servicio }}</div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">¿Cirugía?:</div>
-          <div>{{ cual_cirugia or "No" }}</div>
-        </div>
-      </div>
-
-      {% if razon_terapia %}
+    <div class="chat-meta mt-2">
+      <div class="row g-2 small">
         <div class="col-12 col-md-6">
-          <div class="d-flex gap-1">
-            <div class="fw-semibold text-muted" style="min-width: 70px;">¿Razón terapias?:</div>
-            <div><span class="badge bg-secondary">{{ razon_terapia }}</span></div>
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Paciente:</div>
+            <div class="fw-semibold">{{ nombre }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Documento:</div>
+            <div>{{ cedula }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Tipo cita:</div>
+            <div>{{ tipo_cita }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Servicio:</div>
+            <div>{{ tipo_servicio }}</div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">¿Cirugía?:</div>
+            <div>{{ cual_cirugia or "No" }}</div>
+          </div>
+        </div>
+
+        {% if razon_terapia %}
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Razón:</div>
+            <div><span class="badge-pill">{{ razon_terapia }}</span></div>
           </div>
         </div>
         {% endif %}
-      
-      {% if lugar_cita %}
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width: 70px;">¿Lugar cita?:</div>
-          <div>{{ lugar_cita }}</div>
-        </div>
-      </div>
-      {% endif %}
 
-      <div class="col-12 col-md-6">
-        <div class="d-flex gap-1">
-          <div class="fw-semibold text-muted" style="min-width:70px;">Línea:</div>
-          <div><span class="badge bg-secondary">{{ to_number }}</span></div>
+        {% if lugar_cita %}
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Lugar:</div>
+            <div>{{ lugar_cita }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Línea:</div>
+            <div><span class="badge-pill">{{ to_number }}</span></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- DERECHA (BOTONES) -->
   <div class="d-flex flex-row flex-lg-column gap-2">
-    <a class="btn btn-outline-secondary btn-sm" href="/panel">← Volver</a>
+    <a class="btn btn-outline-secondary btn-soft btn-sm" href="/panel">← Volver</a>
 
     <form method="post" action="/panel/chat/close">
       <input type="hidden" name="from_number" value="{{ from_number }}">
-      <button class="btn btn-danger btn-sm w-100"
+      <button class="btn btn-danger btn-soft btn-sm w-100"
               onclick="return confirm('¿Cerrar y borrar historial?');">
         Cerrar + Borrar
       </button>
     </form>
   </div>
-
 </div>
-
 
 {% if error %}
   <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
 
-<div class="card shadow-sm mb-3">
-  <div id="chatBox" class="card-body" style="max-height: 60vh; overflow-y: auto;">
+<!-- CHAT -->
+<div class="chat-card mb-3">
+  <div id="chatBox" class="chat-box">
     {% if messages|length == 0 %}
       <div class="text-muted">No hay mensajes guardados aún.</div>
     {% endif %}
 
     {% for m in messages %}
-      <div data-msg-id="{{ m.id }}" class="mb-3 d-flex {% if m.direction == 'out' %}justify-content-end{% else %}justify-content-start{% endif %}"></div>
-      <div class="mb-3 d-flex {% if m.direction == 'out' %}justify-content-end{% else %}justify-content-start{% endif %}">
-        <div class="p-2 rounded border" style="max-width: 75%;">
-          <div class="small text-muted mb-1">
+      <div data-msg-id="{{ m.id }}"
+           class="mb-3 d-flex {% if m.direction == 'out' %}justify-content-end{% else %}justify-content-start{% endif %}">
+        <div class="bubble {% if m.direction == 'out' %}bubble-out{% else %}bubble-in{% endif %}">
+          <div class="bubble-meta">
             {% if m.direction == 'out' %}Asesor{% else %}Cliente{% endif %}
             · {{ m.created_at }}
           </div>
@@ -112,25 +218,29 @@
   </div>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-body">
+<!-- RESPUESTA -->
+<div class="chat-card chat-input">
+  <div class="p-3">
     <form method="post" action="/panel/chat/send">
       <input type="hidden" name="from_number" value="{{ from_number }}">
 
       <div class="mb-2">
-        <label class="form-label mb-1">Responder</label>
-        <textarea class="form-control" name="message" rows="3" placeholder="Escribe tu mensaje..." required></textarea>
+        <label class="form-label mb-1 fw-semibold">Responder</label>
+        <textarea class="form-control" name="message" rows="3"
+                  placeholder="Escribe tu mensaje..." required></textarea>
       </div>
 
       <div class="d-flex justify-content-end">
-        <button class="btn btn-primary w-100" type="submit">Enviar</button>
+        <button class="btn btn-primary btn-open-premium w-100" type="submit">Enviar</button>
       </div>
     </form>
   </div>
 </div>
+
 <audio id="notifSound" preload="auto">
   <source src="/static/notify.mp3" type="audio/mpeg">
 </audio>
+
 <script>
   const fromNumber = "{{ from_number | urlencode }}";
   const chatBox = document.getElementById("chatBox");
@@ -139,22 +249,32 @@
 
   const textarea = document.querySelector('textarea[name="message"]');
   const form = textarea?.closest("form");
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
   async function markReadToLastMessage() {
-  const nodes = chatBox.querySelectorAll("[data-msg-id]");
-  if (!nodes.length) return;
+    const nodes = chatBox.querySelectorAll("[data-msg-id]");
+    if (!nodes.length) return;
 
-  const lastId = parseInt(nodes[nodes.length - 1].dataset.msgId, 10) || 0;
-  if (!lastId) return;
+    const lastId = parseInt(nodes[nodes.length - 1].dataset.msgId, 10) || 0;
+    if (!lastId) return;
 
-  await fetch("/panel/chat/mark_read", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({
-      conversation_key: decodeURIComponent(fromNumber),
-      last_read_message_id: lastId
-    })
-     }).catch(() => {});
+    await fetch("/panel/chat/mark_read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        conversation_key: decodeURIComponent(fromNumber),
+        last_read_message_id: lastId
+      })
+    }).catch(() => {});
   }
 
   function isNearBottom(el, threshold = 80) {
@@ -170,7 +290,6 @@
     suppressScrollClear = true;
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    // deja pasar 1 frame / pequeño delay para que si el navegador dispara scroll event, no limpie
     setTimeout(() => {
       suppressScrollClear = false;
     }, 120);
@@ -188,7 +307,7 @@
 
       const messages = await res.json();
 
-      //  IMPORTANTE: medir si estaba abajo ANTES del render
+      // medir si estaba abajo ANTES del render
       const wasNearBottom = isNearBottom(chatBox);
 
       const newCount = messages.length;
@@ -200,9 +319,9 @@
         const newOnes = messages.slice(lastMessageCount);
         const hasInbound = newOnes.some(m => m.direction === "in");
 
-        //  Solo notificar si entra "in"
+        // Solo notificar si entra "in"
         if (hasInbound) {
-          //  Badge solo tiene sentido si NO estaba abajo (si estaba abajo, ya lo vio)
+          // Badge solo tiene sentido si NO estaba abajo
           if (!wasNearBottom) {
             badge?.classList.remove("d-none");
           }
@@ -214,7 +333,7 @@
         lastMessageCount = newCount;
       }
 
-      // Render
+      // Render premium (mismo look que Jinja)
       chatBox.innerHTML = "";
       messages.forEach(m => {
         const wrapper = document.createElement("div");
@@ -223,16 +342,17 @@
           "mb-3 d-flex " +
           (m.direction === "out" ? "justify-content-end" : "justify-content-start");
 
+        const who = (m.direction === "out" ? "Asesor" : "Cliente");
+        const when = escapeHtml(m.created_at);
+        const body = escapeHtml(m.body);
+
         wrapper.innerHTML = `
-          <div class="p-2 rounded border" style="max-width:75%">
-            <div class="small text-muted mb-1">
-              ${m.direction === "out" ? "Asesor" : "Cliente"} · ${m.created_at}
-            </div>
-            <div style="white-space: pre-wrap;">${m.body}</div>
+          <div class="bubble ${m.direction === "out" ? "bubble-out" : "bubble-in"}">
+            <div class="bubble-meta">${who} · ${when}</div>
+            <div style="white-space: pre-wrap;">${body}</div>
           </div>
         `;
         chatBox.appendChild(wrapper);
-
       });
 
       // Mantener scroll inteligente sin apagar badge
@@ -253,9 +373,8 @@
   // ocultar badge al enviar
   form?.addEventListener("submit", () => {
     badge?.classList.add("d-none");
-    markReadToLastMessage(); // ✅ marca leído en BD también
+    markReadToLastMessage();
   });
-
 
   // Enter envía / Shift+Enter hace salto
   textarea?.addEventListener("keydown", e => {
@@ -265,15 +384,14 @@
     }
   });
 
-  //  Ajuste: solo limpiar badge si el scroll fue "real" del usuario
+  // solo limpiar badge si el scroll fue real del usuario
   chatBox.addEventListener("scroll", () => {
     if (suppressScrollClear) return;
     if (isNearBottom(chatBox)) {
       badge?.classList.add("d-none");
-      markReadToLastMessage(); //  marca leído en BD
+      markReadToLastMessage();
     }
   });
-
 
   refreshMessages();
   setInterval(refreshMessages, 5000);
