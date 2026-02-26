@@ -2,14 +2,89 @@
 {% set title = "Pendientes" %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-3">
+
+<style>
+  /* ===== Panel look pro, minimalista (sin romper Bootstrap) ===== */
+
+  .pending-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom: 12px;
+  }
+
+  .pending-card{
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+
+  /* Responsive horizontal */
+  .pending-table-wrap{
+    overflow:auto;
+  }
+
+  /* Header sticky */
+  .pending-table thead th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    font-weight: 700;
+    letter-spacing: .2px;
+  }
+
+  /* Mejor lectura */
+  .pending-table td, .pending-table th{
+    vertical-align: middle;
+    padding: 12px 14px;
+    white-space: nowrap; /* evita saltos feos; el scroll lo maneja el wrap */
+  }
+
+  .pending-table tbody tr{
+    transition: background .12s ease;
+  }
+  .pending-table tbody tr:hover{
+    background: #f4f8ff;
+  }
+
+  /* Acción alineada */
+  .col-action{
+    text-align: right;
+    width: 160px;
+  }
+
+  /* Badge "Nuevo" más bonito */
+  .badge-new{
+    display:inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 12px;
+    background: #ffe8e8;
+    color: #b02a37;
+    border: 1px solid rgba(176,42,55,.18);
+  }
+
+  /* Botón consistente */
+  .btn-open{
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 700;
+  }
+</style>
+
+<div class="pending-header">
   <h3 class="mb-0">Conversaciones pendientes</h3>
   <span class="text-muted small">Total: {{ pending|length }}</span>
 </div>
 
-<div class="card shadow-sm">
-  <div class="table-responsive">
-    <table class="table table-striped table-hover mb-0">
+<div class="card shadow-sm pending-card">
+  <div class="table-responsive pending-table-wrap">
+    <table class="table table-striped table-hover mb-0 pending-table">
       <thead>
         <tr>
           <th>From</th>
@@ -18,13 +93,14 @@
           <th>Motivo</th>
           <th>Entidad</th>
           <th>Actualizado</th>
-          <th style="width: 140px;">Acción</th>
+          <th class="col-action">Acción</th>
         </tr>
       </thead>
+
       <tbody>
       {% if pending|length == 0 %}
         <tr>
-          <td colspan="6" class="text-center text-muted py-4">No hay pendientes 🎉</td>
+          <td colspan="7" class="text-center text-muted py-4">No hay pendientes 🎉</td>
         </tr>
       {% else %}
         {% for item in pending %}
@@ -35,18 +111,16 @@
             <td>{{ item.reason }}</td>
             <td>{{ item.entidad }}</td>
             <td>{{ item.updated_at }}</td>
-            <td>
-            <span class="badge bg-danger me-2 conv-new {% if not item.has_new|default(false) %}d-none{% endif %}">
-              Nuevo
-            </span>
-            <a class="btn btn-sm btn-primary" href="{{ item.chat_url }}">Abrir</a>
-          </td>
-
+            <td class="col-action">
+              <span class="badge-new me-2 conv-new {% if not item.has_new|default(false) %}d-none{% endif %}">
+                Nuevo
+              </span>
+              <a class="btn btn-sm btn-primary btn-open" href="{{ item.chat_url }}">Abrir</a>
+            </td>
           </tr>
         {% endfor %}
       {% endif %}
-    </tbody>
-
+      </tbody>
     </table>
   </div>
 </div>
@@ -54,6 +128,7 @@
 <div class="alert alert-info mt-3">
   Bienvenido al panel de administración. Aquí puedes gestionar las conversaciones con los clientes.
 </div>
+
 <script>
   const POLL_MS = 5000;
 
@@ -69,7 +144,7 @@
     try {
       const res = await fetch("/panel/pending/poll", {
         cache: "no-store",
-        credentials: "include"   
+        credentials: "include"
       });
       if (!res.ok) return;
       const data = await res.json();
@@ -86,6 +161,5 @@
   pollPending();
   setInterval(pollPending, POLL_MS);
 </script>
-
 
 {% endblock %}

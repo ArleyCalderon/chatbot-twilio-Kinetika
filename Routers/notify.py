@@ -13,7 +13,7 @@ class NotifyIn(BaseModel):
     wa_from: str | None = None       # opcional
     body: str | None = None          # texto libre (modo viejo)
 
-    # ✅ Nuevo: soporte para templates
+    #  Nuevo: soporte para templates
     content_sid: str | None = None   # "HXxxxxxxxx..."
     content_variables: Dict[str, Any] | None = None  # {"1":"Nombre","2":"Fecha","3":"Hora"}
 
@@ -33,7 +33,7 @@ def notify_whatsapp(payload: NotifyIn, x_api_key: str = Header(default="")):
     wa_from = payload.wa_from or default_from
     client = Client(account_sid, auth_token)
 
-    # ✅ Validación: o mandas body o mandas template
+    #  Validación: o  body o  template
     if payload.content_sid:
         if not payload.content_variables:
             raise HTTPException(status_code=400, detail="content_variables is required when content_sid is provided")
@@ -56,8 +56,5 @@ def notify_whatsapp(payload: NotifyIn, x_api_key: str = Header(default="")):
             body=payload.body
         )
         rendered = payload.body
-
-    # Si luego quieres que se vea en panel, lo activas:
-    # save_message(payload.to, "out", rendered, sent.sid, to_number=wa_from)
 
     return {"ok": True, "sid": sent.sid}
