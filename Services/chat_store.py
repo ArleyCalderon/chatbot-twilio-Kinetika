@@ -23,7 +23,7 @@ def load_session(from_number: str):
             # - Handoff (asesor): 96h (4 días)
             expiry_hours = 24
             if step == -9:
-                expiry_hours = 96
+                expiry_hours = 168
 
             if datetime.now(timezone.utc) - updated_at > timedelta(hours=expiry_hours):
                 delete_session(from_number)
