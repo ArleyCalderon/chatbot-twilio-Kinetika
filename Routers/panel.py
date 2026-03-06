@@ -36,7 +36,6 @@ def _get_chat_status(from_number: str) -> dict:
                 FROM messages
                 WHERE from_number = %s
                   AND direction = 'in'
-                  AND body <> 'Inicio de conversación'
                 ORDER BY created_at DESC, id DESC
                 LIMIT 1;
             """, (from_number,))
