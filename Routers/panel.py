@@ -19,9 +19,58 @@ from urllib.parse import unquote
 import Core.db as db
 from fastapi import Request
 from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
+from urllib.parse import quote, unquote
 local_tz = ZoneInfo("America/Bogota")
 
+WHATSAPP_WINDOW_HOURS = 24
 
+def _get_chat_status(from_number: str) -> dict:
+    last_inbound_at = None
+    wa_from = os.environ.get("TWILIO_WHATSAPP_FROM")
+
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT created_at, to_number
+                FROM messages
+                WHERE from_number = %s
+                  AND direction = 'in'
+                  AND body <> 'Inicio de conversación'
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1;
+            """, (from_number,))
+            row = cur.fetchone()
+
+    if row:
+        last_inbound_at, inbound_to_number = row
+        if inbound_to_number:
+            wa_from = inbound_to_number
+
+    now_local = datetime.now(local_tz)
+
+    now_local = datetime.now(local_tz)
+
+    if last_inbound_at:
+        if getattr(last_inbound_at, "tzinfo", None):
+            last_inbound_local = last_inbound_at.astimezone(local_tz)
+        else:
+            # asumir UTC si viene naive desde la BD
+            last_inbound_local = last_inbound_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(local_tz)
+    else:
+        last_inbound_local = None
+
+    is_window_open = False
+    if last_inbound_local:
+        is_window_open = (now_local - last_inbound_local) <= timedelta(hours=WHATSAPP_WINDOW_HOURS)
+
+    return {
+        "last_inbound_at": last_inbound_local,
+        "last_inbound_at_str": last_inbound_local.strftime("%d/%m/%Y %I:%M %p") if last_inbound_local else None,
+        "is_window_open": is_window_open,
+        "is_window_expired": not is_window_open,
+        "wa_from": wa_from,
+    }
 
 
 router = APIRouter(prefix="/panel", tags=["panel"])
@@ -243,6 +292,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     cirugia= _display_Cirugia(data)
     razonterapia= _display_Terapia(data)
     lugarcita = _display_LugarCita(data)
+    chat_status = _get_chat_status(from_number)
     # traer mensajes
     messages = []
     last_message_id = 0
@@ -282,6 +332,9 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "cual_cirugia": cirugia,
             "razon_terapia": razonterapia,
             "lugar_cita": lugarcita,
+            "is_window_open": chat_status["is_window_open"],
+            "is_window_expired": chat_status["is_window_expired"],
+            "last_inbound_at": chat_status["last_inbound_at_str"],
 
             
         },
@@ -298,10 +351,17 @@ def chat_send(
         return redirect
 
     message = (message or "").strip()
-    if not message: 
+    # evitar mensaje vacío
+    if not message:
         encoded = quote(from_number, safe="")
         return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
-        #return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+
+    # validar ventana de WhatsApp
+    chat_status = _get_chat_status(from_number)
+
+    if chat_status["is_window_expired"]:
+        encoded = quote(from_number, safe="")
+        return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
 
     # Twilio config
     account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
@@ -364,6 +424,63 @@ def chat_send(
     encoded = quote(from_number, safe="")
     return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
     #return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
+
+@router.post("/chat/reactivate")
+def chat_reactivate(request: Request, from_number: str = Form(...)):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    content_sid = os.environ.get("TWILIO_REACTIVATE_TEMPLATE_SID")
+
+    chat_status = _get_chat_status(from_number)
+    wa_from = chat_status["wa_from"]
+
+    if not account_sid or not auth_token or not wa_from or not content_sid:
+        return templates.TemplateResponse(
+            "panel_chat.html",
+            {
+                "request": request,
+                "user": request.session.get("user"),
+                "from_number": from_number,
+                "messages": [],
+                "error": "Faltan variables de Twilio para reactivar el chat.",
+                "is_window_open": chat_status["is_window_open"],
+                "is_window_expired": chat_status["is_window_expired"],
+                "last_inbound_at": chat_status["last_inbound_at_str"],
+            },
+            status_code=500,
+        )
+
+    client = Client(account_sid, auth_token)
+
+    try:
+        sent = client.messages.create(
+            from_=wa_from,
+            to=from_number,
+            content_sid=content_sid,
+        )
+        save_message(from_number, "out", "Reactivación de chat", sent.sid, to_number=wa_from)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "panel_chat.html",
+            {
+                "request": request,
+                "user": request.session.get("user"),
+                "from_number": from_number,
+                "messages": [],
+                "error": f"Error reactivando chat: {e}",
+                "is_window_open": chat_status["is_window_open"],
+                "is_window_expired": chat_status["is_window_expired"],
+                "last_inbound_at": chat_status["last_inbound_at_str"],
+            },
+            status_code=500,
+        )
+
+    encoded = quote(from_number, safe="")
+    return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
 
 @router.post("/chat/close")
 def chat_close(request: Request, from_number: str = Form(...)):

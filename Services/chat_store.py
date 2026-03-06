@@ -18,7 +18,7 @@ def load_session(from_number: str):
 
             step, data, updated_at = row
 
-            # ⏰ Expiración:
+            #  Expiración:
             # - Flujo normal: 24h
             # - Handoff (asesor): 96h (4 días)
             expiry_hours = 24
