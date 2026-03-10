@@ -462,6 +462,28 @@ def chat_reactivate(request: Request, from_number: str = Form(...)):
             content_sid=content_sid,
         )
         save_message(from_number, "out", "Reactivación de chat", sent.sid, to_number=wa_from)
+        advisor_id = request.session.get("user") or "default"
+
+        with db.pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COALESCE(MAX(id), 0)
+                    FROM messages
+                    WHERE from_number = %s
+                    AND direction = 'in'
+                    AND body <> 'Inicio de conversación';
+                """, (from_number,))
+                latest_in_id = cur.fetchone()[0]
+
+                cur.execute("""
+                    INSERT INTO conversation_reads (conversation_key, advisor_id, last_read_message_id, updated_at)
+                    VALUES (%s, %s, %s, NOW())
+                    ON CONFLICT (conversation_key, advisor_id)
+                    DO UPDATE SET
+                        last_read_message_id = GREATEST(conversation_reads.last_read_message_id, EXCLUDED.last_read_message_id),
+                        updated_at = NOW();
+                """, (from_number, advisor_id, latest_in_id))
+                conn.commit()
     except Exception as e:
         return templates.TemplateResponse(
             "panel_chat.html",
