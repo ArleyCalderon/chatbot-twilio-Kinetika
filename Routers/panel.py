@@ -420,6 +420,30 @@ def chat_send(
         save_message(from_number, "out", message, tw_sid,to_number=wa_from)
     except Exception as e:
         print(f"[WARN] save_message(out) failed: {e}")
+        advisor_id = request.session.get("user") or "default"
+
+    try:
+        with db.pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COALESCE(MAX(id), 0)
+                    FROM messages
+                    WHERE from_number = %s
+                      AND direction = 'in';
+                """, (from_number,))
+                latest_in_id = cur.fetchone()[0]
+
+                cur.execute("""
+                    INSERT INTO conversation_reads (conversation_key, advisor_id, last_read_message_id, updated_at)
+                    VALUES (%s, %s, %s, NOW())
+                    ON CONFLICT (conversation_key, advisor_id)
+                    DO UPDATE SET
+                        last_read_message_id = GREATEST(conversation_reads.last_read_message_id, EXCLUDED.last_read_message_id),
+                        updated_at = NOW();
+                """, (from_number, advisor_id, latest_in_id))
+                conn.commit()
+    except Exception as e:
+        print(f"[WARN] mark read after send failed: {e}")
     encoded = quote(from_number, safe="")
     return RedirectResponse(url=f"/panel/chat?from={encoded}", status_code=302)
     #return RedirectResponse(url=f"/panel/chat?from={from_number}", status_code=302)
