@@ -303,13 +303,13 @@
   });
 
   // solo limpiar badge si el scroll fue real del usuario
-  chatBox.addEventListener("scroll", () => {
-    if (suppressScrollClear) return;
-    if (isNearBottom(chatBox)) {
-      badge?.classList.add("d-none");
-      markReadToLastMessage();
-    }
-  });
+  //chatBox.addEventListener("scroll", () => {
+   // if (suppressScrollClear) return;
+    //if (isNearBottom(chatBox)) {
+     // badge?.classList.add("d-none");
+      //markReadToLastMessage();
+    //}
+  //});
 
   refreshMessages();
   setInterval(refreshMessages, 5000);
