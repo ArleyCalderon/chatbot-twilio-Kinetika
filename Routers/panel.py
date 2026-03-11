@@ -414,13 +414,13 @@ def chat_send(
             },
             status_code=500,
         )
-
+    advisor_id = request.session.get("user") or "default"
     # Guardar como salida en DB
     try:
         save_message(from_number, "out", message, tw_sid,to_number=wa_from)
     except Exception as e:
         print(f"[WARN] save_message(out) failed: {e}")
-        advisor_id = request.session.get("user") or "default"
+        #advisor_id = request.session.get("user") or "default"
 
     try:
         with db.pool.connection() as conn:
