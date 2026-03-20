@@ -22,7 +22,9 @@
           <th>From</th>
           <th>Documento</th>
           <th>Nombre</th>
-          <th>Motivo</th>
+          <th id="sort-motivo" style="cursor:pointer;">
+            Motivo ⬍
+          </th>
           <th>Entidad</th>
           <th>Actualizado</th>
           <th class="col-action">Acción</th>
@@ -89,6 +91,32 @@
       // silencioso
     }
   }
+
+  let motivoAsc = true;
+
+  function sortTableByMotivo() {
+    const table = document.querySelector(".pending-table tbody");
+    const rows = Array.from(table.querySelectorAll("tr"));
+
+    // evita ordenar la fila de "No hay pendientes"
+    if (rows.length === 1 && rows[0].children.length === 1) return;
+
+    rows.sort((a, b) => {
+      const motivoA = a.children[3].innerText.trim().toLowerCase();
+      const motivoB = b.children[3].innerText.trim().toLowerCase();
+
+      if (motivoAsc) {
+        return motivoA.localeCompare(motivoB);
+      } else {
+        return motivoB.localeCompare(motivoA);
+      }
+    });
+
+    rows.forEach(row => table.appendChild(row));
+    motivoAsc = !motivoAsc;
+  }
+
+  document.getElementById("sort-motivo").addEventListener("click", sortTableByMotivo);
 
   pollPending();
   setInterval(pollPending, POLL_MS);
