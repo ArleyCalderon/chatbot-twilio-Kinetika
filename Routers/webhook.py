@@ -8,7 +8,7 @@ from fastapi.responses import Response
 from Services.chat_store import get_client_by_identification
 from zoneinfo import ZoneInfo
 import re
-
+import os
 
 router = APIRouter()
 @router.post("/whatsapp/webhook")
@@ -33,10 +33,12 @@ async def whatsapp_webhook(request: Request):
     OPEN_START_HOUR = 8          # 08:00
     OPEN_END_HOUR = 18           # 18:00 (18:00 en adelante ya está cerrado)
 
+    bypass_schedule = os.getenv("BYPASS_SCHEDULE", "false").lower() == "true"
+
     is_open_day = now_co.weekday() in OPEN_DAYS
     is_open_hour = (OPEN_START_HOUR <= now_co.hour < OPEN_END_HOUR)
 
-    if not (is_open_day and is_open_hour):
+    if not bypass_schedule and not (is_open_day and is_open_hour):
         resp.message(
             "Hola 👋\n"
             "Nuestro horario de atención es *lunes a viernes de 8:00 a 18:00* (hora Colombia).\n"
