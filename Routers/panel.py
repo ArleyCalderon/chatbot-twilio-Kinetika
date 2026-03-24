@@ -4,7 +4,6 @@ from fastapi.templating import Jinja2Templates
 from urllib.parse import quote
 from fastapi import APIRouter, Request, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-import os
 from twilio.rest import Client
 from Core.db import pool
 from Services.chat_store import save_message, delete_messages, delete_session,delete_LastMessagesChat
