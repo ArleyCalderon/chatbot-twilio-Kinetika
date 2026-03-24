@@ -1,24 +1,18 @@
 import os
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from urllib.parse import quote
-from fastapi import APIRouter, Request, Form, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
-from twilio.rest import Client
-from Core.db import pool
-from Services.chat_store import save_message, delete_messages, delete_session,delete_LastMessagesChat
 import json
-from fastapi.responses import JSONResponse
 import Core.db as db
-from urllib.parse import unquote
-from pydantic import BaseModel
-from fastapi import HTTPException
-from fastapi.responses import JSONResponse
-from urllib.parse import unquote
-from fastapi import Request
+from Core.db import pool
 from zoneinfo import ZoneInfo
-from datetime import datetime, timedelta
+from pydantic import BaseModel
+from twilio.rest import Client
+from fastapi import HTTPException
 from urllib.parse import quote, unquote
+from datetime import datetime, timedelta
+from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Request, Form, Query
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from Services.chat_store import save_message, delete_messages, delete_session, delete_LastMessagesChat
+
 local_tz = ZoneInfo("America/Bogota")
 
 WHATSAPP_WINDOW_HOURS = 24
@@ -43,8 +37,6 @@ def _get_chat_status(from_number: str) -> dict:
         last_inbound_at, inbound_to_number = row
         if inbound_to_number:
             wa_from = inbound_to_number
-
-    now_local = datetime.now(local_tz)
 
     now_local = datetime.now(local_tz)
 
@@ -85,11 +77,7 @@ def _require_login(request: Request):
 
 
 
-@router.get("/login", response_class=HTMLResponse)
-def login_get(request: Request):
-    if _is_logged_in(request):
-        return RedirectResponse(url="/panel", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "error": None, "user": None})
+
 
 
 def parse_users(raw: str) -> dict[str, str]:
@@ -117,7 +105,8 @@ def parse_users(raw: str) -> dict[str, str]:
 def login_get(request: Request):
     if _is_logged_in(request):
         return RedirectResponse(url="/panel", status_code=302)
-    return templates.TemplateResponse("login.html", {"request": request, "error": None, "user": None})
+    return templates.TemplateResponse(request, "login.html", {"request": request, "error": None, "user": None})
+
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -126,7 +115,7 @@ def login_post(request: Request, username: str = Form(...), password: str = Form
 
     if not raw_users:
         # sin usuarios configurados = nadie entra
-        return templates.TemplateResponse(
+        return templates.TemplateResponse(request,
             "login.html",
             {"request": request, "error": "Login no configurado", "user": None},
             status_code=500,
@@ -139,11 +128,7 @@ def login_post(request: Request, username: str = Form(...), password: str = Form
         request.session["user"] = username
         return RedirectResponse(url="/panel", status_code=302)
 
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": "Credenciales inválidas", "user": None},
-        status_code=401,
-    )
+    return templates.TemplateResponse(request, "login.html", {"request": request, "error": "Credenciales inválidas", "user": None})
 
 
 @router.get("/logout")
@@ -220,8 +205,9 @@ def panel_home(request: Request):
                 })
 
     return templates.TemplateResponse(
-        "panel_list.html",
-        {"request": request, "pending": pending, "user": request.session.get("user")},
+    request,
+    "panel_list.html",
+    {"request": request, "pending": pending, "user": request.session.get("user")},
     )
 
 def _display_name(data: dict) -> str:
@@ -318,7 +304,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
                    
                 })
 
-    return templates.TemplateResponse(
+    return templates.TemplateResponse(request,
         "panel_chat.html",
         {
             "request": request,
@@ -388,7 +374,7 @@ def chat_send(
 
     if not account_sid or not auth_token or not wa_from:
         # Si no están las env vars, no tumbes el panel: muestra error simple
-        return templates.TemplateResponse(
+        return templates.TemplateResponse(request,
             "panel_chat.html",
             {
                 "request": request,
@@ -407,7 +393,7 @@ def chat_send(
         sent = client.messages.create(from_=wa_from, to=from_number, body=message)
         tw_sid = sent.sid
     except Exception as e:
-        return templates.TemplateResponse(
+        return templates.TemplateResponse(request,
             "panel_chat.html",
             {
                 "request": request,
@@ -467,7 +453,7 @@ def chat_reactivate(request: Request, from_number: str = Form(...)):
     wa_from = chat_status["wa_from"]
 
     if not account_sid or not auth_token or not wa_from or not content_sid:
-        return templates.TemplateResponse(
+        return templates.TemplateResponse(request,
             "panel_chat.html",
             {
                 "request": request,
@@ -515,7 +501,7 @@ def chat_reactivate(request: Request, from_number: str = Form(...)):
                 """, (from_number, advisor_id, latest_in_id))
                 conn.commit()
     except Exception as e:
-        return templates.TemplateResponse(
+        return templates.TemplateResponse( request,
             "panel_chat.html",
             {
                 "request": request,
