@@ -16,7 +16,6 @@ from pydantic import BaseModel
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from urllib.parse import unquote
-import Core.db as db
 from fastapi import Request
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
@@ -251,6 +250,10 @@ def _display_Cirugia(data):
 def _display_Terapia(data):
     return data.get("razon_terapia")  # devuelve None si no existe
 
+def _display_fecha_cancelacion(data):
+    return data.get("fecha_cancelacion")  # devuelve None si no existe
+
+
 def _display_LugarCita(data):
     return data.get("lugar_cita")  # devuelve None si no existe
 
@@ -292,6 +295,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
     razonterapia= _display_Terapia(data)
     lugarcita = _display_LugarCita(data)
     chat_status = _get_chat_status(from_number)
+    fecha_cancelacion=_display_fecha_cancelacion(data)
     # traer mensajes
     messages = []
     last_message_id = 0
@@ -331,6 +335,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "cual_cirugia": cirugia,
             "razon_terapia": razonterapia,
             "lugar_cita": lugarcita,
+            "fecha_cancelacion": fecha_cancelacion,
             "is_window_open": chat_status["is_window_open"],
             "is_window_expired": chat_status["is_window_expired"],
             "last_inbound_at": chat_status["last_inbound_at_str"],

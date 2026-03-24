@@ -48,6 +48,16 @@
           </div>
         </div>
 
+
+        {% if fecha_cancelacion %}
+        <div class="col-12 col-md-6">
+          <div class="d-flex gap-2">
+            <div class="fw-semibold text-muted" style="min-width:80px;">Fecha cancelacion:</div>
+            <div>{{ fecha_cancelacion }}</div>
+          </div>
+        </div>
+        {% endif %}
+
         {% if razon_terapia %}
         <div class="col-12 col-md-6">
           <div class="d-flex gap-2">
