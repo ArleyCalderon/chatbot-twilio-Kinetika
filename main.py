@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.responses import PlainTextResponse
 from Core.db import init_pool, init_db
 from Routers.webhook import router as webhook_router
@@ -36,6 +37,11 @@ app.include_router(webhook_router)
 app.include_router(panel_router)
 app.include_router(notify_router)
 app.include_router(assistants_router)
+
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/panel")
 
 @app.get("/health", response_class=PlainTextResponse)
 def health():

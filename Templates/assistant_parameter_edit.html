@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% set title = "Editar parámetro" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-1">Editar parámetro</h3>
+    <div class="text-muted">
+      <strong>Asistente:</strong> {{ assistant.name }}
+    </div>
+  </div>
+
+  <a href="/assistants/{{ assistant.id_assistant }}/parameters" class="btn btn-outline-secondary btn-sm">
+    Volver
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" action="/assistants/{{ assistant.id_assistant }}/parameters/{{ parameter.id_parameter }}/edit">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Nombre del parámetro</label>
+        <input
+          type="text"
+          class="form-control"
+          value="{{ parameter.parameter_name }}"
+          readonly
+        >
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Valor</label>
+        <textarea
+          name="parameter_value"
+          class="form-control"
+          rows="4"
+          required
+        >{{ parameter.parameter_value }}</textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Visible</label>
+        <input
+          type="text"
+          class="form-control"
+          value="{{ 'Sí' if parameter.is_visible else 'No' }}"
+          readonly
+        >
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a href="/assistants/{{ assistant.id_assistant }}/parameters" class="btn btn-outline-secondary">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+          Guardar cambios
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

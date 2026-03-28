@@ -1,5 +1,5 @@
 import Core.db as db
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -11,6 +11,24 @@ def _require_login(request: Request):
     if not request.session.get("user"):
         return RedirectResponse(url="/panel/login", status_code=302)
     return None
+
+
+def _is_sensitive_parameter(name: str) -> bool:
+    if not name:
+        return False
+
+    name = name.strip().lower()
+    sensitive_words = [
+        "password",
+        "contraseña",
+        "contrasena",
+        "clave",
+        "secret",
+        "token",
+        "apikey",
+        "api_key",
+    ]
+    return any(word in name for word in sensitive_words)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -82,10 +100,16 @@ def assistant_parameters(request: Request, id_assistant: int):
             rows = cur.fetchall()
 
             for param in rows:
+                parameter_name = param[1]
+                parameter_value = param[2]
+
+                masked_value = "***" if _is_sensitive_parameter(parameter_name) else parameter_value
+
                 parameters.append({
                     "id_parameter": param[0],
-                    "parameter_name": param[1],
-                    "parameter_value": param[2],
+                    "parameter_name": parameter_name,
+                    "parameter_value": parameter_value,
+                    "masked_value": masked_value,
                     "is_visible": param[3],
                 })
 
@@ -98,4 +122,93 @@ def assistant_parameters(request: Request, id_assistant: int):
             "assistant": assistant,
             "parameters": parameters,
         },
+    )
+
+
+@router.get("/{id_assistant}/parameters/{id_parameter}/edit", response_class=HTMLResponse)
+def edit_parameter_form(request: Request, id_assistant: int, id_parameter: int):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    assistant = None
+    parameter = None
+
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id_assistant, name
+                FROM assistants
+                WHERE id_assistant = %s;
+            """, (id_assistant,))
+            row = cur.fetchone()
+
+            if not row:
+                return RedirectResponse(url="/assistants", status_code=302)
+
+            assistant = {
+                "id_assistant": row[0],
+                "name": row[1],
+            }
+
+            cur.execute("""
+                SELECT id_parameter, id_assistant, parameter_name, parameter_value, is_visible
+                FROM rpa_parameters
+                WHERE id_parameter = %s
+                  AND id_assistant = %s;
+            """, (id_parameter, id_assistant))
+            row = cur.fetchone()
+
+            if not row:
+                return RedirectResponse(
+                    url=f"/assistants/{id_assistant}/parameters",
+                    status_code=302
+                )
+
+            parameter = {
+                "id_parameter": row[0],
+                "id_assistant": row[1],
+                "parameter_name": row[2],
+                "parameter_value": row[3],
+                "is_visible": row[4],
+            }
+
+    return templates.TemplateResponse(
+        request,
+        "assistant_parameter_edit.html",
+        {
+            "request": request,
+            "user": request.session.get("user"),
+            "assistant": assistant,
+            "parameter": parameter,
+        },
+    )
+
+
+@router.post("/{id_assistant}/parameters/{id_parameter}/edit")
+def edit_parameter_save(
+    request: Request,
+    id_assistant: int,
+    id_parameter: int,
+    parameter_value: str = Form(...),
+):
+    redirect = _require_login(request)
+    if redirect:
+        return redirect
+
+    parameter_value = (parameter_value or "").strip()
+
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE rpa_parameters
+                SET parameter_value = %s
+                WHERE id_parameter = %s
+                  AND id_assistant = %s;
+            """, (parameter_value, id_parameter, id_assistant))
+            conn.commit()
+
+    return RedirectResponse(
+        url=f"/assistants/{id_assistant}/parameters",
+        status_code=302,
     )
