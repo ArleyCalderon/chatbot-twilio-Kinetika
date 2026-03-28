@@ -7,9 +7,13 @@ router = APIRouter(prefix="/assistants", tags=["assistants"])
 templates = Jinja2Templates(directory="Templates")
 
 
-def _require_login(request: Request):
+def _require_admin(request: Request):
     if not request.session.get("user"):
         return RedirectResponse(url="/panel/login", status_code=302)
+
+    if request.session.get("user") != "Admin":
+        return RedirectResponse(url="/panel", status_code=302)
+
     return None
 
 
@@ -33,7 +37,7 @@ def _is_sensitive_parameter(name: str) -> bool:
 
 @router.get("", response_class=HTMLResponse)
 def assistants_home(request: Request):
-    redirect = _require_login(request)
+    redirect = _require_admin(request)
     if redirect:
         return redirect
 
@@ -67,7 +71,7 @@ def assistants_home(request: Request):
 
 @router.get("/{id_assistant}/parameters", response_class=HTMLResponse)
 def assistant_parameters(request: Request, id_assistant: int):
-    redirect = _require_login(request)
+    redirect = _require_admin(request)
     if redirect:
         return redirect
 
@@ -127,7 +131,7 @@ def assistant_parameters(request: Request, id_assistant: int):
 
 @router.get("/{id_assistant}/parameters/{id_parameter}/edit", response_class=HTMLResponse)
 def edit_parameter_form(request: Request, id_assistant: int, id_parameter: int):
-    redirect = _require_login(request)
+    redirect = _require_admin(request)
     if redirect:
         return redirect
 
@@ -192,7 +196,7 @@ def edit_parameter_save(
     id_parameter: int,
     parameter_value: str = Form(...),
 ):
-    redirect = _require_login(request)
+    redirect = _require_admin(request)
     if redirect:
         return redirect
 

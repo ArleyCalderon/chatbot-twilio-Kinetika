@@ -18,8 +18,11 @@
 
       {% if user %}
       <div class="d-flex align-items-center gap-3">
-        <a class="text-white text-decoration-none" href="/panel">Chats</a>
+      <a class="text-white text-decoration-none" href="/panel">Chats</a>
+
+      {% if user == "Admin" %}
         <a class="text-white text-decoration-none" href="/assistants">Asistentes</a>
+      {% endif %}
       </div>
       {% endif %}
 
