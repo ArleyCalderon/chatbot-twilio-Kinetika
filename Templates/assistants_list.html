@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set title = "Asistentes" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="mb-0">Asistentes</h3>
+  <span class="badge bg-light text-dark border">
+    Total: {{ assistants|length }}
+  </span>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th class="text-end">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if assistants|length == 0 %}
+          <tr>
+            <td colspan="3" class="text-center text-muted py-4">
+              No hay asistentes registrados
+            </td>
+          </tr>
+        {% else %}
+          {% for item in assistants %}
+          <tr>
+            <td>{{ item.id_assistant }}</td>
+            <td>{{ item.name }}</td>
+            <td class="text-end">
+              <a href="/assistants/{{ item.id_assistant }}/parameters" class="btn btn-sm btn-primary">
+                Ver parámetros
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="alert alert-info mt-3 mb-0">
+  Aquí puedes consultar los asistentes configurados en la base de datos.
+</div>
+{% endblock %}

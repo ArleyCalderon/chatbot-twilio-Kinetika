@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% set title = "Parámetros del asistente" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-1">Parámetros del asistente</h3>
+    <div class="text-muted">
+      <strong>ID:</strong> {{ assistant.id_assistant }} |
+      <strong>Nombre:</strong> {{ assistant.name }}
+    </div>
+  </div>
+
+  <a href="/assistants" class="btn btn-outline-secondary btn-sm">
+    Volver
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-striped table-hover mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Parámetro</th>
+          <th>Valor</th>
+          <th>Visible</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if parameters|length == 0 %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">
+              Este asistente no tiene parámetros registrados
+            </td>
+          </tr>
+        {% else %}
+          {% for item in parameters %}
+          <tr>
+            <td>{{ item.id_parameter }}</td>
+            <td>{{ item.parameter_name }}</td>
+            <td>{{ item.parameter_value }}</td>
+            <td>
+              {% if item.is_visible %}
+                <span class="badge bg-success">Sí</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
