@@ -99,6 +99,7 @@ def assistant_parameters(request: Request, id_assistant: int):
                 SELECT id_parameter, parameter_name, parameter_value, is_visible
                 FROM rpa_parameters
                 WHERE id_assistant = %s
+                AND is_visible = TRUE
                 ORDER BY id_parameter ASC;
             """, (id_assistant,))
             rows = cur.fetchall()
