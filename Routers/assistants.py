@@ -46,7 +46,7 @@ def assistants_home(request: Request):
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id_assistant, name
+                SELECT id_assistant, name, usuario
                 FROM assistants
                 ORDER BY id_assistant ASC;
             """)
@@ -56,6 +56,7 @@ def assistants_home(request: Request):
                 assistants.append({
                     "id_assistant": row[0],
                     "name": row[1],
+                    "usuario": row[2],
                 })
 
     return templates.TemplateResponse(
