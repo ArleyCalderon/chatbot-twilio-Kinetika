@@ -140,9 +140,8 @@ def logout(request: Request):
 import json
 
 
-@router.get("", response_class=HTMLResponse)  # /panel
+@router.get("", response_class=HTMLResponse)
 def panel_home(request: Request):
-
     redirect = _require_login(request)
     if redirect:
         return redirect
@@ -152,6 +151,7 @@ def panel_home(request: Request):
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
 
+            # 1) Lista principal desde sessions
             cur.execute("""
                 SELECT from_number, data, updated_at
                 FROM sessions
@@ -162,7 +162,6 @@ def panel_home(request: Request):
 
             pending = []
             for from_number, data, updated_at in rows:
-
                 if isinstance(data, str):
                     try:
                         data = json.loads(data)
@@ -179,7 +178,9 @@ def panel_home(request: Request):
                 cur.execute("""
                     SELECT COALESCE(MAX(id), 0)
                     FROM messages
-                    WHERE from_number = %s AND direction = 'in' AND body <> 'Inicio de conversación';
+                    WHERE from_number = %s
+                      AND direction = 'in'
+                      AND body <> 'Inicio de conversación';
                 """, (from_number,))
                 latest_in_id = cur.fetchone()[0]
 
@@ -193,6 +194,7 @@ def panel_home(request: Request):
 
                 has_new = latest_in_id > last_read
                 clean_number = ''.join(filter(str.isdigit, from_number))[-10:]
+
                 pending.append({
                     "from_number": clean_number,
                     "nombre": nombre,
@@ -204,10 +206,31 @@ def panel_home(request: Request):
                     "has_new": has_new,
                 })
 
+            # 2) Contadores desde submissions
+            cur.execute("""
+                SELECT
+                    COUNT(*) FILTER (WHERE LOWER(flow) = 'agendar') AS total_agendar,
+                    COUNT(*) FILTER (WHERE LOWER(flow) = 'cancelar') AS total_cancelar,
+                    COUNT(*) FILTER (WHERE LOWER(flow) = 'informe_final') AS total_informe
+                FROM submissions;
+            """)
+            rpa_counts = cur.fetchone()
+
+            total_agendar = rpa_counts[0] or 0
+            total_cancelar = rpa_counts[1] or 0
+            total_informe = rpa_counts[2] or 0
+
     return templates.TemplateResponse(
-    request,
-    "panel_list.html",
-    {"request": request, "pending": pending, "user": request.session.get("user")},
+        request,
+        "panel_list.html",
+        {
+            "request": request,
+            "pending": pending,
+            "user": request.session.get("user"),
+            "total_agendar": total_agendar,
+            "total_cancelar": total_cancelar,
+            "total_informe": total_informe,
+        },
     )
 
 def _display_name(data: dict) -> str:
