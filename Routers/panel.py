@@ -548,27 +548,63 @@ def chat_close(request: Request, from_number: str = Form(...)):
     if redirect:
         return redirect
 
-    # borra historial
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    close_template_sid = os.environ.get("TWILIO_CLOSE_CHAT_TEMPLATE_SID")
+
+    chat_status = _get_chat_status(from_number)
+    wa_from = chat_status["wa_from"]
+
+    close_message = "El chat ha finalizado. Si necesitas algo más, puedes escribirnos nuevamente."
+
+    # Intentar avisarle al usuario antes de cerrar
+    if account_sid and auth_token and wa_from:
+        client = Client(account_sid, auth_token)
+
+        try:
+            if chat_status["is_window_open"]:
+                sent = client.messages.create(
+                    from_=wa_from,
+                    to=from_number,
+                    body=close_message,
+                )
+                # Si igual vas a borrar mensajes abajo, esto realmente no queda guardado mucho tiempo,
+                # pero no estorba.
+                save_message(from_number, "out", close_message, sent.sid, to_number=wa_from)
+
+            else:
+                if close_template_sid:
+                    sent = client.messages.create(
+                        from_=wa_from,
+                        to=from_number,
+                        content_sid=close_template_sid,
+                    )
+                    save_message(from_number, "out", "Cierre de chat por plantilla", sent.sid, to_number=wa_from)
+                else:
+                    print("[WARN] La ventana está cerrada y falta TWILIO_CLOSE_CHAT_TEMPLATE_SID")
+
+        except Exception as e:
+            print(f"[WARN] no se pudo enviar mensaje de cierre: {e}")
+    else:
+        print("[WARN] faltan variables de Twilio para enviar cierre de chat")
+
+    # Cerrar en BD
     try:
         delete_messages(from_number)
     except Exception as e:
         print(f"[WARN] delete_messages failed: {e}")
 
-    # resetea conversación (para que el bot vuelva a menú)
     try:
         delete_session(from_number)
     except Exception as e:
         print(f"[WARN] delete_session failed: {e}")
-    
-    # resetea conversación (para que el bot vuelva a menú)
+
     try:
         delete_LastMessagesChat(from_number)
     except Exception as e:
         print(f"[WARN] delete_LastMessagesChat failed: {e}")
 
-    
     return RedirectResponse(url="/panel", status_code=302)
-
 
 
 
