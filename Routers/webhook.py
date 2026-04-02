@@ -23,6 +23,17 @@ async def whatsapp_webhook(request: Request):
 
     resp = MessagingResponse()
 
+    bot_active = os.getenv("BOT_ACTIVE", "true").lower() == "true"
+
+    if not bot_active:
+        resp.message(
+            "Hola 👋\n"
+            "Hoy no estamos atendiendo 😅\n"
+            "Disculpa las molestias y gracias por tu paciencia 🙏\n "
+            "Puedes escribirnos más tarde y con gusto te ayudamos."
+        )
+        return Response(content=str(resp), media_type="application/xml")
+
     # -------------------------
     # Horario de atención (Colombia)
     # -------------------------
