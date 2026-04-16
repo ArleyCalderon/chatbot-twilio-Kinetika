@@ -24,13 +24,14 @@ async def whatsapp_webhook(request: Request):
     resp = MessagingResponse()
 
     bot_active = os.getenv("BOT_ACTIVE", "true").lower() == "true"
+    allow_only_existing_users = os.getenv("ALLOW_ONLY_EXISTING_USERS", "false").lower() == "true"
 
     if not bot_active:
         resp.message(
             "Hola 👋\n"
             "Hoy no estamos atendiendo 😅\n"
-            "Disculpa las molestias y gracias por tu paciencia 🙏\n "
-            "Puedes escribirnos más tarde y con gusto te ayudamos."
+            "Disculpa las molestias y gracias por tu paciencia 🙏\n"
+            "Por favor escribenos luego y con gusto te ayudamos."
         )
         return Response(content=str(resp), media_type="application/xml")
 
@@ -72,7 +73,16 @@ async def whatsapp_webhook(request: Request):
     # -------------------------
     # Usuario nuevo -> mostrar menú (step = -1)
     # -------------------------
+
     if session is None:
+        if allow_only_existing_users:
+            resp.message(
+                "Hola 👋\n"
+                "En este momento tenemos un alto flujo de mensajes y estamos priorizando solicitudes en curso.\n"
+                "Por favor escríbenos más tarde. Gracias por tu comprensión 🙏"
+            )
+            return Response(content=str(resp), media_type="application/xml")
+
         save_session(from_number, step=-1, data={})
         resp.message(MENU_TEXT)
         return Response(content=str(resp), media_type="application/xml")
