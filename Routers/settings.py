@@ -8,11 +8,13 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 templates = Jinja2Templates(directory="Templates")
 
 
-def _require_admin(request: Request):
-    if not request.session.get("user"):
+def _require_owner(request: Request):
+    user = request.session.get("user")
+
+    if not user:
         return RedirectResponse(url="/panel/login", status_code=302)
 
-    if request.session.get("user") != "Admin":
+    if user != "Arley":
         return RedirectResponse(url="/panel", status_code=302)
 
     return None
@@ -20,7 +22,7 @@ def _require_admin(request: Request):
 
 @router.get("/", response_class=HTMLResponse)
 def settings_page(request: Request):
-    redirect = _require_admin(request)
+    redirect = _require_owner(request)
     if redirect:
         return redirect
 
@@ -70,7 +72,7 @@ def save_settings(
     existing_users_only_message: str = Form(""),
     outside_schedule_message: str = Form(""),
 ):
-    redirect = _require_admin(request)
+    redirect = _require_owner(request)
     if redirect:
         return redirect
 
