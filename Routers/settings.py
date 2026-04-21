@@ -60,7 +60,7 @@ def settings_page(request: Request):
     )
 
 
-@router.post("")
+@router.post("/")
 def save_settings(
     request: Request,
     bot_active: str = Form("off"),
