@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set title = "Configuración del Bot" %}
+
+{% block content %}
+
+<h3 class="mb-4">⚙️ Configuración del Bot</h3>
+
+<form method="post">
+
+  <div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" name="bot_active"
+      {% if settings.bot_active %}checked{% endif %}>
+    <label class="form-check-label">Bot activo</label>
+  </div>
+
+  <div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" name="allow_only_existing_users"
+      {% if settings.allow_only_existing_users %}checked{% endif %}>
+    <label class="form-check-label">Solo clientes existentes</label>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <input class="form-check-input" type="checkbox" name="bypass_schedule"
+      {% if settings.bypass_schedule %}checked{% endif %}>
+    <label class="form-check-label">Ignorar horario</label>
+  </div>
+
+  <hr>
+
+  <div class="mb-3">
+    <label class="form-label">Mensaje cuando el bot está apagado</label>
+    <textarea class="form-control" name="bot_inactive_message" rows="3">{{ settings.bot_inactive_message }}</textarea>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Mensaje solo clientes existentes</label>
+    <textarea class="form-control" name="existing_users_only_message" rows="3">{{ settings.existing_users_only_message }}</textarea>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label">Mensaje fuera de horario</label>
+    <textarea class="form-control" name="outside_schedule_message" rows="3">{{ settings.outside_schedule_message }}</textarea>
+  </div>
+
+  <button class="btn btn-primary">💾 Guardar cambios</button>
+
+</form>
+
+{% endblock %}
