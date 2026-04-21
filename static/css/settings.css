@@ -1,0 +1,223 @@
+.settings-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.settings-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #182033;
+  margin-bottom: 6px;
+}
+
+.settings-subtitle {
+  color: #6b7280;
+  margin-bottom: 0;
+  font-size: 0.98rem;
+}
+
+.settings-status-badge {
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.settings-status-badge.active {
+  background: #e8f7ee;
+  color: #157347;
+  border-color: #b7e4c7;
+}
+
+.settings-status-badge.inactive {
+  background: #fdecec;
+  color: #b42318;
+  border-color: #f5c2c7;
+}
+
+.settings-card {
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.settings-card .card-body {
+  padding: 28px;
+}
+
+.settings-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.settings-card-subtitle {
+  color: #6b7280;
+  font-size: 0.92rem;
+  margin-bottom: 22px;
+}
+
+.setting-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.setting-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.setting-item:first-child {
+  padding-top: 0;
+}
+
+.setting-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.setting-help {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.settings-form .form-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-form .form-check-input {
+  width: 3rem;
+  height: 1.6rem;
+  margin-top: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.settings-form .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.18);
+}
+
+.settings-form .form-check-label {
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.settings-form .form-label {
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.settings-form .form-text-custom {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.settings-form .form-control {
+  border-radius: 16px;
+  border: 1px solid #dbe2ea;
+  padding: 14px 16px;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+  transition: all 0.2s ease;
+  background: #fcfdff;
+}
+
+.settings-form .form-control:focus {
+  border-color: #86b7fe;
+  background: #ffffff;
+  box-shadow: 0 0 0 0.22rem rgba(13, 110, 253, 0.14);
+}
+
+.settings-divider {
+  border-top: 1px solid #eef1f5;
+  margin: 22px 0 0 0;
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.settings-footer-note {
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+.settings-save-btn {
+  border-radius: 14px;
+  padding: 10px 22px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(13, 110, 253, 0.18);
+}
+
+.settings-save-btn:hover {
+  transform: translateY(-1px);
+}
+
+.settings-highlight {
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+@media (max-width: 991.98px) {
+  .settings-title {
+    font-size: 1.8rem;
+  }
+
+  .settings-card .card-body {
+    padding: 22px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .settings-title {
+    font-size: 1.55rem;
+  }
+
+  .settings-header {
+    margin-bottom: 18px;
+  }
+
+  .settings-card .card-body {
+    padding: 18px;
+  }
+
+  .settings-form .form-control {
+    min-height: 105px;
+    padding: 12px 14px;
+  }
+
+  .settings-save-btn {
+    width: 100%;
+  }
+
+  .settings-footer {
+    align-items: stretch;
+  }
+}

@@ -18,7 +18,7 @@ def _require_admin(request: Request):
     return None
 
 
-@router.get("", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 def settings_page(request: Request):
     redirect = _require_admin(request)
     if redirect:
