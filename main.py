@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from Routers.panel import router as panel_router
 from Routers.notify import router as notify_router
 from Routers.assistants import router as assistants_router
+from Routers.settings import router as settings_router
 
 
 app = FastAPI()
@@ -37,6 +38,7 @@ app.include_router(webhook_router)
 app.include_router(panel_router)
 app.include_router(notify_router)
 app.include_router(assistants_router)
+app.include_router(settings_router)
 
 
 @app.get("/")

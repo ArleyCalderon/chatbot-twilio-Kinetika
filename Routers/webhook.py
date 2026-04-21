@@ -3,12 +3,13 @@ from twilio.twiml.messaging_response import MessagingResponse
 from Services.chat_store import load_session, save_session, delete_session, save_submission, save_message,upsert_client
 from Services.chat_flow import QUESTIONS, MENU_TEXT, HANDOFF_TEXT, CANCEL_PROMPT, CANCEL_DATE_PROMPT, validate_and_normalize, next_valid_step, normalize_digits
 from datetime import datetime, timezone, date, timedelta
+from Services.app_settings import get_runtime_settings
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
 from Services.chat_store import get_client_by_identification
 from zoneinfo import ZoneInfo
 import re
-import os
+
 
 router = APIRouter()
 @router.post("/whatsapp/webhook")
@@ -23,16 +24,13 @@ async def whatsapp_webhook(request: Request):
 
     resp = MessagingResponse()
 
-    bot_active = os.getenv("BOT_ACTIVE", "true").lower() == "true"
-    allow_only_existing_users = os.getenv("ALLOW_ONLY_EXISTING_USERS", "false").lower() == "true"
+    settings = get_runtime_settings()
+
+    bot_active = settings["bot_active"]
+    allow_only_existing_users = settings["allow_only_existing_users"]
 
     if not bot_active:
-        resp.message(
-            "Hola 👋\n"
-            "Hoy no estamos atendiendo 😅\n"
-            "Disculpa las molestias y gracias por tu paciencia 🙏\n"
-            "Por favor escribenos luego y con gusto te ayudamos."
-        )
+        resp.message(settings["bot_inactive_message"])
         return Response(content=str(resp), media_type="application/xml")
 
     # -------------------------
@@ -45,17 +43,13 @@ async def whatsapp_webhook(request: Request):
     OPEN_START_HOUR = 8          # 08:00
     OPEN_END_HOUR = 18           # 18:00 (18:00 en adelante ya está cerrado)
 
-    bypass_schedule = os.getenv("BYPASS_SCHEDULE", "false").lower() == "true"
+    bypass_schedule = settings["bypass_schedule"]
 
     is_open_day = now_co.weekday() in OPEN_DAYS
     is_open_hour = (OPEN_START_HOUR <= now_co.hour < OPEN_END_HOUR)
 
     if not bypass_schedule and not (is_open_day and is_open_hour):
-        resp.message(
-            "Hola 👋\n"
-            "Nuestro horario de atención es *lunes a viernes de 8:00 a 18:00* (hora Colombia).\n"
-            "Escríbenos dentro de ese horario y con gusto te atendemos 🙂"
-        )
+        resp.message(settings["outside_schedule_message"])
         return Response(content=str(resp), media_type="application/xml")
 
 
@@ -76,11 +70,7 @@ async def whatsapp_webhook(request: Request):
 
     if session is None:
         if allow_only_existing_users:
-            resp.message(
-                "Hola 👋\n"
-                "En este momento tenemos un alto flujo de mensajes y estamos priorizando solicitudes en curso.\n"
-                "Por favor escríbenos más tarde. Gracias por tu comprensión 🙏"
-            )
+            resp.message(settings["existing_users_only_message"])
             return Response(content=str(resp), media_type="application/xml")
 
         save_session(from_number, step=-1, data={})
