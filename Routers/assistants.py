@@ -196,7 +196,7 @@ def edit_parameter_save(
     request: Request,
     id_assistant: int,
     id_parameter: int,
-    parameter_value: str = Form(...),
+    parameter_value: str = Form(None),
 ):
     redirect = _require_admin(request)
     if redirect:

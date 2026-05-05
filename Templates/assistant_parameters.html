@@ -24,7 +24,6 @@
           <th>ID</th>
           <th>Parámetro</th>
           <th>Valor</th>
-          <th>Visible</th>
           <th class="text-end">Acción</th>
         </tr>
       </thead>
@@ -41,13 +40,6 @@
             <td>{{ item.id_parameter }}</td>
             <td>{{ item.parameter_name }}</td>
             <td>{{ item.masked_value }}</td>
-            <td>
-              {% if item.is_visible %}
-                <span class="badge bg-success">Sí</span>
-              {% else %}
-                <span class="badge bg-secondary">No</span>
-              {% endif %}
-            </td>
             <td class="text-end">
               <a
                 href="/assistants/{{ assistant.id_assistant }}/parameters/{{ item.id_parameter }}/edit"
