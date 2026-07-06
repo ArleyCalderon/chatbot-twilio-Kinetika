@@ -71,6 +71,47 @@ def init_db():
                 );
             
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS comedero_state (
+                    device_id TEXT PRIMARY KEY,
+
+                    pending_command TEXT,
+                    command_id TEXT,
+                    command_status TEXT,
+
+                    last_command TEXT,
+                    last_result TEXT,
+
+                    last_seen TIMESTAMPTZ,
+                    last_ip TEXT,
+                    last_wifi_rssi INTEGER,
+                    last_wifi_quality INTEGER,
+                    last_wifi_label TEXT,
+                    last_uptime_ms BIGINT,
+
+                    closed_angle INTEGER,
+                    open_angle INTEGER,
+                    open_time_ms INTEGER,
+
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+                    CHECK (
+                        pending_command IS NULL
+                        OR pending_command IN ('dar_comida', 'abrir', 'cerrar')
+                    ),
+
+                    CHECK (
+                        last_command IS NULL
+                        OR last_command IN ('dar_comida', 'abrir', 'cerrar')
+                    ),
+
+                    CHECK (
+                        command_status IS NULL
+                        OR command_status IN ('pending', 'sent', 'done', 'failed')
+                    )
+                );
+            """)
 
 
             conn.commit()
