@@ -84,15 +84,15 @@ async def whatsapp_webhook(request: Request):
         save_message(from_number, "in", incoming_msg, message_sid,to_number=to_number)
         m = cmd  # ya está normalizado
 
-        if m in {"menu", "menú", "inicio", "empezar", "volver"}:
-            save_session(from_number, step=-1, data={})
-            resp.message(MENU_TEXT)
-            return Response(content=str(resp), media_type="application/xml")
+        #if m in {"menu", "menú", "inicio", "empezar", "volver"}:
+        #    save_session(from_number, step=-1, data={})
+        #    resp.message(MENU_TEXT)
+        #    return Response(content=str(resp), media_type="application/xml")
 
-        if ("cancel" in m) or ("cancela" in m) or ("reprogram" in m) or ("cambiar" in m):
-            save_session(from_number, step=-1, data={})
-            resp.message("Listo 🙂\n" + MENU_TEXT)
-            return Response(content=str(resp), media_type="application/xml")
+        #if ("cancel" in m) or ("cancela" in m) or ("reprogram" in m) or ("cambiar" in m):
+        #    save_session(from_number, step=-1, data={})
+        #    resp.message("Listo 🙂\n" + MENU_TEXT)
+        #    return Response(content=str(resp), media_type="application/xml")
 
         return Response(content="", status_code=204)
 
