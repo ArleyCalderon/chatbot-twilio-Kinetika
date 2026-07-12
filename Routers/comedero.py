@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Literal
 from uuid import uuid4
-
+from datetime import datetime, timezone
 import Core.db as db
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -181,6 +181,7 @@ def create_order(request: CreateOrderRequest):
 
     with db.pool.connection() as conn:
         with conn.cursor() as cur:
+            # Garantiza que exista la fila del dispositivo.
             cur.execute(
                 """
                 INSERT INTO comedero_state (
@@ -194,11 +195,13 @@ def create_order(request: CreateOrderRequest):
                 (request.device_id,),
             )
 
+            # Bloquea la fila mientras revisamos y modificamos la orden.
             cur.execute(
                 """
                 SELECT
                     pending_command,
-                    command_status
+                    command_status,
+                    command_sent_at
                 FROM comedero_state
                 WHERE device_id = %s
                 FOR UPDATE;
@@ -208,15 +211,80 @@ def create_order(request: CreateOrderRequest):
 
             row = cur.fetchone()
 
-            if row and row[0] is not None and row[1] in ("pending", "sent"):
-                conn.commit()
-                return {
-                    "ok": False,
-                    "message": "Ya hay una orden activa para este comedero",
-                    "pending_command": row[0],
-                    "command_status": row[1],
-                }
+            if not row:
+                raise HTTPException(
+                    status_code=500,
+                    detail="No fue posible registrar el comedero",
+                )
 
+            pending_command = row[0]
+            command_status = row[1]
+            command_sent_at = row[2]
+
+            # Ya existe una orden activa.
+            if pending_command is not None:
+
+                if command_status == "pending":
+                    conn.commit()
+                    return {
+                        "ok": False,
+                        "message": "Ya existe una orden pendiente.",
+                    }
+
+                if command_status == "sent":
+                    # Si no existe fecha de envío, la tratamos como una orden dañada.
+                    if command_sent_at is None:
+                        segundos = 999999
+                    else:
+                        if command_sent_at.tzinfo is None:
+                            command_sent_at = command_sent_at.replace(
+                                tzinfo=timezone.utc
+                            )
+
+                        segundos = (
+                            datetime.now(timezone.utc) - command_sent_at
+                        ).total_seconds()
+
+                    # Todavía puede estar ejecutándose normalmente.
+                    if segundos < 30:
+                        conn.commit()
+                        return {
+                            "ok": False,
+                            "message": "La orden anterior aún está siendo procesada.",
+                        }
+
+                    # Llevaba más de 30 segundos en sent:
+                    # se limpia, pero NO se crea otra orden automáticamente.
+                    cur.execute(
+                        """
+                        UPDATE comedero_state
+                        SET
+                            pending_command = NULL,
+                            command_id = NULL,
+                            command_status = NULL,
+                            command_sent_at = NULL,
+                            last_command = %s,
+                            last_result = 'Orden expirada automáticamente',
+                            updated_at = NOW()
+                        WHERE device_id = %s;
+                        """,
+                        (
+                            pending_command,
+                            request.device_id,
+                        ),
+                    )
+
+                    conn.commit()
+
+                    return {
+                        "ok": False,
+                        "message": (
+                            "Se detectó una orden expirada y el estado fue "
+                            "restablecido. Vuelve a enviar la orden."
+                        ),
+                    }
+
+            # No había ninguna orden activa: creamos una nueva.
             cur.execute(
                 """
                 UPDATE comedero_state
@@ -224,6 +292,7 @@ def create_order(request: CreateOrderRequest):
                     pending_command = %s,
                     command_id = %s,
                     command_status = 'pending',
+                    command_sent_at = NULL,
                     last_command = %s,
                     last_result = NULL,
                     updated_at = NOW()
@@ -247,7 +316,6 @@ def create_order(request: CreateOrderRequest):
         "command": request.command,
         "status": "pending",
     }
-
 
 @router.get("/order/next")
 def get_next_order(device_id: str):
@@ -290,6 +358,7 @@ def get_next_order(device_id: str):
                 UPDATE comedero_state
                 SET
                     command_status = 'sent',
+                    command_sent_at = NOW(),
                     updated_at = NOW()
                 WHERE device_id = %s;
                 """,
@@ -349,6 +418,7 @@ def mark_order_done(result: OrderDoneRequest):
                 SET
                     pending_command = NULL,
                     command_status = %s,
+                    command_sent_at = NULL,
                     last_command = %s,
                     last_result = %s,
                     updated_at = NOW()
@@ -370,4 +440,31 @@ def mark_order_done(result: OrderDoneRequest):
         "device_id": result.device_id,
         "command_id": result.command_id,
         "status": new_status,
+    }
+
+@router.post("/order/reset")
+def reset_order(device_id: str):
+    with db.pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE comedero_state
+                SET
+                pending_command = NULL,
+                command_id = NULL,
+                command_status = NULL,
+                last_command = NULL,
+                last_result = NULL,
+                updated_at = NOW(),
+                command_sent_at = NULL
+                WHERE device_id = %s;
+                """,
+                (device_id,),
+            )
+
+            conn.commit()
+
+    return {
+        "ok": True,
+        "message": "Estado restablecido",
     }
