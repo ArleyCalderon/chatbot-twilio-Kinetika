@@ -2,7 +2,7 @@ import json
 from twilio.twiml.messaging_response import MessagingResponse
 from Services.chat_store import load_session, save_session, delete_session, save_submission, save_message,upsert_client
 from Services.chat_flow import QUESTIONS, MENU_TEXT, HANDOFF_TEXT, CANCEL_PROMPT, CANCEL_DATE_PROMPT, validate_and_normalize, next_valid_step, normalize_digits
-from datetime import datetime, timezone, date, timedelta
+from datetime import datetime, timezone, date, timedelta,time
 from Services.app_settings import get_runtime_settings
 from fastapi import APIRouter, Request
 from fastapi.responses import Response
@@ -33,24 +33,39 @@ async def whatsapp_webhook(request: Request):
         resp.message(settings["bot_inactive_message"])
         return Response(content=str(resp), media_type="application/xml")
 
+
+
     # -------------------------
     # Horario de atención (Colombia)
     # -------------------------
     tz = ZoneInfo("America/Bogota")
     now_co = datetime.now(tz)
 
-    OPEN_DAYS = {0, 1, 2, 3, 4}   # Lunes(0) a Viernes(4)
-    OPEN_START_HOUR = 8          # 08:00
-    OPEN_END_HOUR = 18           # 18:00 (18:00 en adelante ya está cerrado)
+    OPEN_DAYS = {0, 1, 2, 3, 4}  # Lunes(0) a Viernes(4)
+
+    MORNING_START = time(8, 0)    # 08:00 a. m.
+    MORNING_END = time(12, 0)     # 12:00 m.
+
+    AFTERNOON_START = time(13, 0) # 01:00 p. m.
+    AFTERNOON_END = time(17, 0)   # 05:00 p. m.
 
     bypass_schedule = settings["bypass_schedule"]
 
+    current_time = now_co.time()
+
     is_open_day = now_co.weekday() in OPEN_DAYS
-    is_open_hour = (OPEN_START_HOUR <= now_co.hour < OPEN_END_HOUR)
+
+    is_morning_open = MORNING_START <= current_time < MORNING_END
+    is_afternoon_open = AFTERNOON_START <= current_time < AFTERNOON_END
+
+    is_open_hour = is_morning_open or is_afternoon_open
 
     if not bypass_schedule and not (is_open_day and is_open_hour):
         resp.message(settings["outside_schedule_message"])
-        return Response(content=str(resp), media_type="application/xml")
+        return Response(
+            content=str(resp),
+            media_type="application/xml"
+        )
 
 
 # Nota: como ya cargamos session/step/data arriba, NO los vuelvas a cargar más abajo.
