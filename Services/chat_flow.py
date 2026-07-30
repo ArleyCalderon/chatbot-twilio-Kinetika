@@ -323,7 +323,6 @@ HANDOFF_TEXT = (
     "📌 Importante:\n"
     "• La respuesta puede tardar debido al alto volumen de solicitudes.\n"
     "• Te contactaremos por este mismo medio.\n"
-    "• La cita se asignará teniendo en cuenta la disponibilidad que nos indiques.\n\n"
     #"👉 Si en cualquier momento deseas volver al bot, escribe *menu*."
 )
 
