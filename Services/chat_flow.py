@@ -313,13 +313,17 @@ RequiereCita = (
     "2) No"
 )
 
-#  Modo handoff (asesor humano)
+# Modo handoff (asesor humano)
 HANDOFF_TEXT = (
     "Perfecto ✅\n"
     "Te remitiremos a un asesor para ayudarte con tu requerimiento.\n\n"
+    "📅 Mientras recibes respuesta, por favor indícanos qué días y horarios "
+    "tienes disponibles para la asignación de tu cita.\n"
+    "Puedes mencionar varias opciones para facilitar la programación.\n\n"
     "📌 Importante:\n"
-    "• La respuesta puede tardar debido a altos volúmenes de solicitudes.\n"
-    "• Te contactaremos por este mismo medio.\n\n"
+    "• La respuesta puede tardar debido al alto volumen de solicitudes.\n"
+    "• Te contactaremos por este mismo medio.\n"
+    "• La cita se asignará teniendo en cuenta la disponibilidad que nos indiques.\n\n"
     #"👉 Si en cualquier momento deseas volver al bot, escribe *menu*."
 )
 
