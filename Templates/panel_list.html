@@ -61,9 +61,10 @@
 
               {% if item.cirugia %}
                 <span
-                  class="cirugia-indicator"
-                  title="Cirugía reciente{% if item.cual_cirugia %}: {{ item.cual_cirugia }}{% endif %}">
-                </span>
+                  class="text-danger ms-1"
+                  title="Cirugía reciente{% if item.cual_cirugia %}: {{ item.cual_cirugia }}{% endif %}"
+                  style="cursor: help;"
+                >●</span>
               {% endif %}
             </td>
             <td>{{ item.reason }}</td>
