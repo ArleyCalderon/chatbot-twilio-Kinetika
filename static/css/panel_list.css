@@ -127,3 +127,15 @@ border-radius: 999px;
 .pending-table-wrap::-webkit-scrollbar-track{
 background: rgba(15,23,42,.06);
 }
+
+.cirugia-indicator {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  vertical-align: middle;
+  cursor: help;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
+}

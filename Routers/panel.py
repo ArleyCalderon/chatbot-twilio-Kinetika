@@ -201,6 +201,8 @@ def panel_home(request: Request):
                     "cedula": cedula,
                     "reason": data.get("reason", "Agendar"),
                     "entidad": entidad,
+                    "cirugia": data.get("cirugia") == "SI",
+                    "cual_cirugia": data.get("cual_cirugia"),
                     "updated_at": local_dt.strftime("%d/%m/%Y %I:%M %p"),
                     "chat_url": f"/panel/chat?from={quote(from_number, safe='')}",
                     "has_new": has_new,
