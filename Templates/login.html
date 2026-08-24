@@ -1,36 +1,89 @@
 {% extends "base.html" %}
-{% set title = "Login" %}
+{% set title = "Iniciar sesión | Kinetika IPS" %}
+{% set hide_nav = true %}
+{% set body_class = "login-page" %}
+{% set main_class = "login-main" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-5 col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h4 class="mb-3">Iniciar sesión</h4>
-
-        {% if error %}
-          <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-
-        <form method="post" action="/panel/login">
-          <div class="mb-3">
-            <label class="form-label">Usuario</label>
-            <input class="form-control" type="text" name="username" required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">Contraseña</label>
-            <input class="form-control" type="password" name="password" required>
-          </div>
-
-          <button class="btn btn-primary w-100" type="submit">Entrar</button>
-
-          <p class="text-muted small mt-3 mb-0">
-            <!--Tip: en Render configura <code>PANEL_USER</code> y <code>PANEL_PASS</code>.-->
-          </p>
-        </form>
+<section class="login-shell" aria-labelledby="login-title">
+  <div class="login-card">
+    <aside class="login-welcome">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">K</span>
+        <div>
+          <div class="brand-name">KINETIKA IPS</div>
+          <div class="brand-subtitle">Rehabilitación del movimiento</div>
+        </div>
       </div>
+
+      <div class="welcome-copy">
+        <span class="welcome-kicker">Panel de atención</span>
+        <h1>Conversaciones que acercan el cuidado.</h1>
+        <p>Gestiona las solicitudes de tus pacientes desde un solo lugar.</p>
+      </div>
+
+      <div class="welcome-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        Acceso para el equipo de atención
+      </div>
+    </aside>
+
+    <div class="login-form-panel">
+      <div class="mobile-brand" aria-label="Kinetika IPS">
+        <span class="brand-mark" aria-hidden="true">K</span>
+        <span class="brand-name">KINETIKA IPS</span>
+      </div>
+
+      <div class="login-heading">
+        <span class="login-eyebrow">Panel de asesores</span>
+        <h2 id="login-title">Bienvenido de nuevo</h2>
+        <p>Ingresa tus datos para continuar.</p>
+      </div>
+
+      {% if error %}
+        <div class="login-alert" role="alert">
+          <span aria-hidden="true">!</span>
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="post" action="/panel/login">
+        <div class="login-field">
+          <label for="username">Usuario</label>
+          <input id="username"
+                 type="text"
+                 name="username"
+                 autocomplete="username"
+                 placeholder="Escribe tu usuario"
+                 autofocus
+                 required>
+        </div>
+
+        <div class="login-field">
+          <label for="password">Contraseña</label>
+          <input id="password"
+                 type="password"
+                 name="password"
+                 autocomplete="current-password"
+                 placeholder="Escribe tu contraseña"
+                 required>
+        </div>
+
+        <button class="login-submit" type="submit">
+          Ingresar al panel
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <p class="login-note">
+        <span aria-hidden="true">●</span>
+        Acceso exclusivo para personal autorizado
+      </p>
     </div>
   </div>
-</div>
+</section>
 {% endblock %}

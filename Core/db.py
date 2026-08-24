@@ -78,6 +78,7 @@ def init_db():
                     pending_command TEXT,
                     command_id TEXT,
                     command_status TEXT,
+                    command_sent_at TIMESTAMPTZ,
 
                     last_command TEXT,
                     last_result TEXT,
@@ -111,6 +112,11 @@ def init_db():
                         OR command_status IN ('pending', 'sent', 'done', 'failed')
                     )
                 );
+            """)
+            # Migración compatible con instalaciones donde la tabla ya existía.
+            cur.execute("""
+                ALTER TABLE comedero_state
+                ADD COLUMN IF NOT EXISTS command_sent_at TIMESTAMPTZ;
             """)
 
 

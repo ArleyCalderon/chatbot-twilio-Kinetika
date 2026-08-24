@@ -14,10 +14,11 @@
   {% block extra_css %}{% endblock %}
 </head>
 
-<body class="bg-light">
+<body class="bg-light {{ body_class or '' }}">
+  {% if not hide_nav %}
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-      <a class="navbar-brand" href="/panel">Panel Asesores</a>
+      <a class="navbar-brand" href="/panel">Panel de asesores</a>
 
       {% if user %}
       <div class="d-flex align-items-center gap-3">
@@ -40,8 +41,9 @@
       </div>
     </div>
   </nav>
+  {% endif %}
 
-  <main class="container py-4">
+  <main class="{{ main_class or 'container py-4' }}">
     {% block content %}{% endblock %}
   </main>
 
