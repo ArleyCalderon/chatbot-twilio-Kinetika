@@ -219,7 +219,7 @@ async def whatsapp_webhook(request: Request):
             save_submission(from_number, data.get("flow", "cancelar"), data, message_sid)
             save_session(from_number, step=-9, data=data)
             save_message(from_number, "in", "Inicio de conversación", message_sid, to_number=to_number)
-            resp.message("Un asesor lo apoyará a reagendar su cita lo antes posible 🙂")
+            resp.message(HANDOFF_TEXT)
             return Response(content=str(resp), media_type="application/xml")
 
         if m in {"2", "no", "n"}:
