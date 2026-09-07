@@ -40,8 +40,7 @@ QUESTIONS = [
     {"key": "razon_terapia", "text": "¿Por qué le remiten terapias?", "type": "text_min3",
      "condition": lambda data: data.get("tipo_cita") == "Valoración primera vez"},
     {"key": "tipo_servicio",
- "text": "¿Qué servicio desea agendar?\n1) Terapia Física\n2) Terapia domiciliaria\n\n"
-         "💧 Actualmente el servicio de hidroterapia se encuentra temporalmente suspendido.",
+ "text": "¿Qué servicio desea agendar?\n1) Hidroterapia\n2) Terapia Física\n3) Terapia domiciliaria",
  "type": "tiposervicio"},
 
     {"key": "cirugia", "text": "¿Tienes alguna cirugía reciente?\n1) Sí\n2) No", "type": "yesno",
@@ -267,34 +266,19 @@ def validate_and_normalize(q: dict, msg: str, data: dict):
             return True, "sede dosquebradas", None
         return False, None, "Responde con 1 o 2 ."
 
-    # if t == "tiposervicio":
-    #     m = msg.lower()
-    #     if m in {"1", "hidroterapia"}:
-    #         return True, "Hidroterapia", None
-    #     if m in {"2", "terapia física", "terapia fisica"}:
-    #         return True, "Terapia Física", None
-    #     if m in {"3", "terapia domiciliaria"}:
-    #         return True, "Terapia domiciliaria", None
-    #     return False, None, "Responde con 1, 2  o 3"
     if t == "tiposervicio":
         m = msg.lower()
 
-        if m in {"1", "terapia física", "terapia fisica"}:
+        if m in {"1", "hidroterapia"}:
+            return True, "Hidroterapia", None
+
+        if m in {"2", "terapia física", "terapia fisica"}:
             return True, "Terapia Física", None
 
-        if m in {"2", "terapia domiciliaria"}:
+        if m in {"3", "terapia domiciliaria"}:
             return True, "Terapia domiciliaria", None
 
-        if "hidroterapia" in m:
-            return False, None, (
-                "💧 Actualmente el servicio de hidroterapia se encuentra "
-                "temporalmente suspendido.\n\n"
-                "Por favor selecciona:\n"
-                "1) Terapia Física\n"
-                "2) Terapia domiciliaria"
-            )
-
-        return False, None, "Responde con 1 (Terapia Física) o 2 (Terapia domiciliaria)."
+        return False, None, "Responde con 1, 2 o 3."
 
     if t == "yesno":
         m = msg.lower()
@@ -345,12 +329,6 @@ MENU_TEXT = (
     "nuestra sede Dosquebradas continúa cerrada y con los servicios suspendidos, ya que el "
     "edificio presenta afectaciones importantes que requieren las respectivas revisiones y "
     "condiciones de seguridad.\n\n"
-
-    "Por otra parte, en nuestra sede Circunvalar – Pereira, el servicio de hidroterapia "
-    "continúa temporalmente suspendido, debido a que esta área fue una de las más afectadas, "
-    "pero nos encontramos trabajando para realizar los arreglos y adecuaciones necesarias, "
-    "con el propósito de brindar nuevamente a nuestros usuarios un servicio seguro, oportuno "
-    "y de calidad.\n\n"
 
     "Agradecemos profundamente su comprensión y paciencia durante este proceso. 💙\n\n"
 
