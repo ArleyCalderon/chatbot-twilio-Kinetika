@@ -27,7 +27,7 @@
       {% if user == "Admin" %}
         <a class="text-white text-decoration-none" href="/assistants">Asistentes</a>
       {% endif %}
-      {% if user == "Arley" %}
+      {% if user in ["Arley", "Admin"] %}
         <a class="text-white text-decoration-none" href="/settings">Config</a>
       {% endif %}
       </div>

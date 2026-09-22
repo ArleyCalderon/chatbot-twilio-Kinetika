@@ -14,7 +14,7 @@ def _require_owner(request: Request):
     if not user:
         return RedirectResponse(url="/panel/login", status_code=302)
 
-    if user != "Arley":
+    if user not in {"Arley", "Admin"}:
         return RedirectResponse(url="/panel", status_code=302)
 
     return None
