@@ -19,7 +19,8 @@ async def whatsapp_webhook(request: Request):
     message_sid = form.get("MessageSid")
     incoming_msg = (form.get("Body") or "").strip()
     to_number = form.get("To")
-        
+    username = (form.get("Username") or "").strip()
+    profile_name = (form.get("ProfileName") or "").strip()
     #save_message(from_number, "in", incoming_msg, message_sid)
 
     resp = MessagingResponse()
@@ -78,6 +79,12 @@ async def whatsapp_webhook(request: Request):
     session = load_session(from_number)
     step = session["step"] if session else None
     data = (session["data"] or {}) if session else {}
+    # Datos solo informativos para mostrar en el panel
+    if username:
+        data["whatsapp_username"] = username
+
+    if profile_name:
+        data["whatsapp_profile_name"] = profile_name
 
     # -------------------------
     # Usuario nuevo -> mostrar menú (step = -1)
@@ -88,7 +95,7 @@ async def whatsapp_webhook(request: Request):
             resp.message(settings["existing_users_only_message"])
             return Response(content=str(resp), media_type="application/xml")
 
-        save_session(from_number, step=-1, data={})
+        save_session(from_number, step=-1, data=data)
         resp.message(MENU_TEXT)
         return Response(content=str(resp), media_type="application/xml")
 

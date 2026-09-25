@@ -290,12 +290,14 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             row = cur.fetchone()
 
     data = row[0] if row else {}
+    
     if isinstance(data, str):
         try:
             data = json.loads(data)
         except Exception:
             data = {}
-
+            
+    display_contact = _display_whatsapp_contact(data, from_number)
     nombre = _display_name(data)
     cedula = _display_cedula(data)
     tipo_servicio = _display_tipo_servicio(data)
@@ -335,6 +337,7 @@ def panel_chat(request: Request, from_number: str = Query(..., alias="from")):
             "request": request,
             "user": request.session.get("user"),
             "from_number": from_number,
+            "display_contact": display_contact,
             "nombre": nombre,
             "cedula": cedula,
             "tipo_servicio": tipo_servicio,
@@ -720,3 +723,20 @@ def panel_pending_poll(request: Request):
 
 def get_read_scope() -> str:
     return "global"
+
+def _display_whatsapp_contact(data: dict, from_number: str) -> str:
+    # Si WhatsApp nos entregó teléfono, mostrarlo como siempre
+    if from_number and from_number.startswith("whatsapp:+"):
+        return from_number.replace("whatsapp:", "")
+
+    # Si ocultó el teléfono, mostrar Username
+    username = data.get("whatsapp_username")
+    if username:
+        return username
+
+    # Fallback al nombre del perfil de WhatsApp
+    profile_name = data.get("whatsapp_profile_name")
+    if profile_name:
+        return profile_name
+
+    return "Usuario de WhatsApp"
